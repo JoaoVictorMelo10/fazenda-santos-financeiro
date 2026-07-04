@@ -1,11 +1,13 @@
 import FormularioLogin from "./Login"
+import CadastroAnimais from "./CadastroAnimais"
+import ListarAnimais from "./ListaAnimais"
 
 
 function App() {
 
   return (
     <>
-    <FormularioLogin />
+    <ListarAnimais/>
     </>
   )
 }
