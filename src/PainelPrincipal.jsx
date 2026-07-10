@@ -11,9 +11,26 @@ function PainelPrincipal() {
 
 
     useEffect(() => {
+        
+        async function SomarCustos(listadeFerros) {
+            const resposta = await supabase.from('custos').select('valor').in('animal_ferro', listadeFerros)
+            let total = 0;
+            resposta.data.forEach((custo) => {
+                total = total + custo.valor;
+            });
+            setCustoTotal(total);
+
+            
+        }
+
         async function FiltroBusca() {
             const resposta = await supabase.from('animais').select('*').eq('status', 'em aberto')
             setTotalAnimais(resposta.data.length)
+            const listaDeFerros = resposta.data.map((animal) => (animal.numero_ferro))
+
+            console.log(listaDeFerros)
+
+            SomarCustos(listaDeFerros)
         }
 
         async function CincoCustos() {
@@ -30,20 +47,12 @@ function PainelPrincipal() {
             console.log(resposta.data)
         }
 
-        async function SomarCustos() {
-            const resposta = await supabase.from('custos').select('valor')
-            let total = 0;
-            resposta.data.forEach((custo) => {
-                total = total + custo.valor;
-            });
-            setCustoTotal(total);
-        }
+
 
 
         FiltroBusca()
         CincoCustos()
         UltimasVendas()
-        SomarCustos()
 
         console.log("O painel carregou!")
     }, []);
@@ -55,12 +64,12 @@ function PainelPrincipal() {
             <h2>Custo total acumulado dos animais na fazenda: {custoTotal}</h2>
 
             <h2>Ultimos 5 lançamentos de custo: </h2>
-            {ultimosCustos.map((custo,index) => (
+            {ultimosCustos.map((custo, index) => (
                 <p key={index}> {custo.categoria} -R$ {custo.valor} </p>
             ))}
 
             <h2>Ultimas vendas realizadas: </h2>
-            {ultimasVendas.map((venda,index) => (
+            {ultimasVendas.map((venda, index) => (
                 <p key={index}> {venda.animal_ferro} {venda.peso_venda}</p>
             ))}
         </div>
