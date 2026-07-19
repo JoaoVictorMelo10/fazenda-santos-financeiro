@@ -42,22 +42,47 @@ CACHE_SEGUNDOS = 6 * 60 * 60
 CABECALHOS_NAVEGADOR = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
     "Accept-Language": "pt-BR,pt;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "https://www.google.com/",
 }
 
-# id_indicador 2 = Boi Gordo CEPEA/B3. O widget e o jeito oficial de embutir
-# a cotacao em sites, bem mais estavel que raspar a pagina do indicador.
-FONTES_CEPEA = [
-    "https://www.cepea.org.br/br/widgetproduto.js.aspx?id_indicador%5B%5D=2",
-    "https://www.cepea.esalq.usp.br/br/widgetproduto.js.aspx?id_indicador%5B%5D=2",
-    "https://www.cepea.esalq.usp.br/br/indicador/boi-gordo.aspx",
+# O CEPEA passou a responder 403 pra acesso automatico. Entao buscamos o mesmo
+# Indicador Boi Gordo CEPEA/ESALQ em espelhos que republicam a cotacao e nao
+# bloqueiam. Tenta um por um ate achar; o CEPEA fica por ultimo, como reserva.
+# id_indicador 2 = Boi Gordo no widget oficial do CEPEA.
+FONTES_PRECO = [
+    ("noticias_agricolas", "https://www.noticiasagricolas.com.br/cotacoes/boi-gordo"),
+    ("cepea_widget", "https://www.cepea.org.br/br/widgetproduto.js.aspx?id_indicador%5B%5D=2"),
+    ("cepea_pagina", "https://www.cepea.esalq.usp.br/br/indicador/boi-gordo.aspx"),
 ]
 
 
-def _extrair_preco(texto):
-    """Acha o primeiro valor monetario plausivel de arroba (entre 100 e 1000)."""
-    for bruto in re.findall(r"R\$\s*([\d\.]{1,7},\d{2})", texto):
+def _valor_plausivel(bruto):
+    try:
         valor = float(bruto.replace(".", "").replace(",", "."))
-        if 100 <= valor <= 1000:
+    except ValueError:
+        return None
+    return valor if 200 <= valor <= 800 else None
+
+
+def _extrair_preco(texto):
+    """Pega o valor a vista do Indicador Boi Gordo CEPEA/ESALQ.
+
+    No espelho (Noticias Agricolas) a pagina tem muitos numeros antes do que
+    interessa (dolar, temperatura, outras cotacoes), entao ancoramos a busca
+    logo depois do titulo do indicador. Se nao achar a ancora, cai pro
+    primeiro valor plausivel de arroba na pagina."""
+    ancora = re.search(r"Indicador do Boi Gordo\s*Esalq", texto, re.IGNORECASE)
+    trecho = texto[ancora.start():ancora.start() + 1500] if ancora else texto
+
+    for bruto in re.findall(r"(\d{3}[.,]\d{2})", trecho):
+        valor = _valor_plausivel(bruto)
+        if valor:
+            return valor
+
+    for bruto in re.findall(r"R\$\s*([\d\.]{1,7},\d{2})", texto):
+        valor = _valor_plausivel(bruto)
+        if valor:
             return valor
     return None
 
@@ -88,17 +113,17 @@ def preco_arroba():
         return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "fonte": "cache"})
 
     erros = []
-    for fonte in FONTES_CEPEA:
+    for nome, url in FONTES_PRECO:
         try:
-            resposta = requests.get(fonte, headers=CABECALHOS_NAVEGADOR, timeout=12)
+            resposta = requests.get(url, headers=CABECALHOS_NAVEGADOR, timeout=12)
             resposta.raise_for_status()
             valor = _extrair_preco(resposta.text)
             if valor:
                 _cache_preco.update({"valor": valor, "data": _extrair_data(resposta.text), "buscado_em": agora})
-                return jsonify({"preco": valor, "data": _cache_preco["data"], "fonte": "cepea"})
-            erros.append(f"{fonte}: preco nao encontrado no retorno")
+                return jsonify({"preco": valor, "data": _cache_preco["data"], "fonte": nome})
+            erros.append(f"{nome}: preco nao encontrado no retorno")
         except Exception as erro:
-            erros.append(f"{fonte}: {erro}")
+            erros.append(f"{nome}: {erro}")
 
     if _cache_preco["valor"]:
         return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "fonte": "cache_antigo"})
