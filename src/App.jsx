@@ -1,31 +1,37 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
+import { AuthProvider } from './AuthContext'
+import RotaProtegida from './RotaProtegida'
+
 import FormularioLogin from "./Login"
+import Cadastro from "./Cadastro"
 import CadastroAnimais from "./CadastroAnimais"
 import ListarAnimais from "./ListaAnimais"
 import LancamentoCusto from "./LancamentoCusto"
 import RegistroVenda from "./RegistroVenda"
 import PainelPrincipal from "./PainelPrincipal"
-import LancamentoVendas from './RegistroVenda'
 import ExibirAnimal from './TelaDetalheAnimal'
-
-
+import Relatorios from './Relatorios'
+import Configuracoes from './Configuracoes'
 
 function App() {
-
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<FormularioLogin/>} />
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<FormularioLogin />} />
+          <Route path="/criar-conta" element={<Cadastro />} />
 
-
-        <Route path='/cadastro-animais' element={<CadastroAnimais />} />
-        <Route path='/lista-animais' element={<ListarAnimais />} />
-        <Route path='/lancamento-custo' element={<LancamentoCusto />} />
-        <Route path='/registro-venda' element={<RegistroVenda />} />
-        <Route path='/painel-principal' element={<PainelPrincipal />} />
-        <Route path='/animal/:numero_ferro' element={<ExibirAnimal/>} />
-      </Routes>
+          <Route path='/painel-principal' element={<RotaProtegida><PainelPrincipal /></RotaProtegida>} />
+          <Route path='/cadastro-animais' element={<RotaProtegida><CadastroAnimais /></RotaProtegida>} />
+          <Route path='/lista-animais' element={<RotaProtegida><ListarAnimais /></RotaProtegida>} />
+          <Route path='/lancamento-custo' element={<RotaProtegida><LancamentoCusto /></RotaProtegida>} />
+          <Route path='/registro-venda' element={<RotaProtegida><RegistroVenda /></RotaProtegida>} />
+          <Route path='/animal/:numero_ferro' element={<RotaProtegida><ExibirAnimal /></RotaProtegida>} />
+          <Route path='/relatorios' element={<RotaProtegida><Relatorios /></RotaProtegida>} />
+          <Route path='/configuracoes' element={<RotaProtegida><Configuracoes /></RotaProtegida>} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
