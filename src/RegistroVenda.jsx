@@ -139,7 +139,7 @@ function RegistroVenda() {
             {linhas.map((linha, indice) => (
               <Cartao key={indice} className="py-3">
                 <div className="flex items-start gap-2">
-                  <div className="grid grid-cols-3 gap-2 flex-1">
+                  <div className="grid grid-cols-2 gap-2 flex-1">
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">Ferro</label>
                       <Input type="number" inputMode="numeric" value={linha.ferro} onChange={(e) => atualizarLinha(indice, 'ferro', e.target.value)} />
@@ -148,10 +148,6 @@ function RegistroVenda() {
                       <label className="block text-xs font-semibold text-text-soft mb-1">Peso saída (@)</label>
                       <Input type="number" step="any" inputMode="decimal" value={linha.peso} onChange={(e) => atualizarLinha(indice, 'peso', e.target.value)} />
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-text-soft mb-1">@ (opcional)</label>
-                      <Input type="number" step="any" inputMode="decimal" value={linha.valor} placeholder={valorPadrao || '—'} onChange={(e) => atualizarLinha(indice, 'valor', e.target.value)} />
-                    </div>
                   </div>
                   {linhas.length > 1 && (
                     <button type="button" onClick={() => removerLinha(indice)} aria-label="Remover este animal" className="mt-6 p-1.5 text-text-soft rounded-full hover:bg-danger-soft hover:text-danger shrink-0">
@@ -159,6 +155,22 @@ function RegistroVenda() {
                     </button>
                   )}
                 </div>
+
+                {linha.valor === '' && !linha.mostrarValor ? (
+                  <button type="button" onClick={() => atualizarLinha(indice, 'mostrarValor', true)} className="mt-2 text-sm font-semibold text-primary">
+                    Preço diferente pra este animal?
+                  </button>
+                ) : (
+                  <div className="mt-2">
+                    <label className="block text-xs font-semibold text-text-soft mb-1">Valor por @ só deste animal (R$)</label>
+                    <div className="flex gap-2">
+                      <Input type="number" step="any" inputMode="decimal" value={linha.valor} placeholder={valorPadrao || 'ex.: 305'} onChange={(e) => atualizarLinha(indice, 'valor', e.target.value)} />
+                      <Botao type="button" variante="fantasma" tamanho="pequeno" onClick={() => { atualizarLinha(indice, 'valor', ''); atualizarLinha(indice, 'mostrarValor', false) }}>
+                        Usar o do grupo
+                      </Botao>
+                    </div>
+                  </div>
+                )}
               </Cartao>
             ))}
           </div>
