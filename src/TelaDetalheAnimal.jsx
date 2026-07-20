@@ -280,7 +280,7 @@ function ExibirAnimal() {
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Campo rotulo="Valor correto (R$)" id="novoValor">
-                <Input id="novoValor" type="number" step="0.01" inputMode="decimal" value={novoValor} onChange={(e) => setNovoValor(e.target.value)} />
+                <Input id="novoValor" type="number" step="any" inputMode="decimal" value={novoValor} onChange={(e) => setNovoValor(e.target.value)} />
               </Campo>
             </div>
             <Campo rotulo="Motivo da correção" id="justificativa" dica="Ex.: digitei o valor errado">
@@ -340,16 +340,16 @@ function ExibirAnimal() {
             {ajustando && (
               <div className="grid grid-cols-2 gap-3 mb-3 anima-pop">
                 <Campo rotulo="Peso alvo (@)" id="pesoAlvo">
-                  <Input id="pesoAlvo" type="number" step="0.01" inputMode="decimal" value={pesoAlvo} onChange={(e) => setPesoAlvo(e.target.value)} />
+                  <Input id="pesoAlvo" type="number" step="any" inputMode="decimal" value={pesoAlvo} onChange={(e) => setPesoAlvo(e.target.value)} />
                 </Campo>
                 <Campo rotulo="Preço da @ (R$)" id="preco" dica={fontePreco?.fonte === 'auto' ? `Preço de hoje (${fontePreco.rotulo})` : precoArroba ? 'Edite se quiser simular' : 'Digite o preço do dia'}>
-                  <Input id="preco" type="number" step="0.01" inputMode="decimal" value={precoArroba} onChange={(e) => setPrecoArroba(e.target.value)} />
+                  <Input id="preco" type="number" step="any" inputMode="decimal" value={precoArroba} onChange={(e) => setPrecoArroba(e.target.value)} />
                 </Campo>
                 <Campo rotulo="Ganho por mês (@)" id="ganho">
-                  <Input id="ganho" type="number" step="0.1" inputMode="decimal" value={ganhoMes} onChange={(e) => setGanhoMes(e.target.value)} />
+                  <Input id="ganho" type="number" step="any" inputMode="decimal" value={ganhoMes} onChange={(e) => setGanhoMes(e.target.value)} />
                 </Campo>
                 <Campo rotulo="Custo por mês (R$)" id="custoMes" dica={custoAcumulado > 0 ? 'Calculado dos lançamentos reais' : 'Estimativa'}>
-                  <Input id="custoMes" type="number" step="0.01" inputMode="decimal" value={custoMensal} placeholder={custoMensalAuto.toFixed(0)} onChange={(e) => setCustoMensal(e.target.value)} />
+                  <Input id="custoMes" type="number" step="any" inputMode="decimal" value={custoMensal} placeholder={custoMensalAuto.toFixed(0)} onChange={(e) => setCustoMensal(e.target.value)} />
                 </Campo>
               </div>
             )}

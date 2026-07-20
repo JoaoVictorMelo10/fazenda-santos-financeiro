@@ -148,7 +148,7 @@ function LancamentoCusto() {
         <Cartao className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Campo rotulo="Valor (R$)" id="valor">
-              <Input id="valor" type="number" step="0.01" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} />
+              <Input id="valor" type="number" step="any" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} />
             </Campo>
             <Campo rotulo="Data" id="data" dica="Já vem com hoje">
               <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />

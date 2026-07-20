@@ -124,7 +124,7 @@ function RegistroVenda() {
               <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
             </Campo>
             <Campo rotulo="Valor por @ (R$)" id="valorPadrao" dica="Vale pra todo o grupo">
-              <Input id="valorPadrao" type="number" step="0.01" inputMode="decimal" value={valorPadrao} onChange={(e) => setValorPadrao(e.target.value)} />
+              <Input id="valorPadrao" type="number" step="any" inputMode="decimal" value={valorPadrao} onChange={(e) => setValorPadrao(e.target.value)} />
             </Campo>
           </div>
         </Cartao>
@@ -146,11 +146,11 @@ function RegistroVenda() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">Peso saída (@)</label>
-                      <Input type="number" step="0.01" inputMode="decimal" value={linha.peso} onChange={(e) => atualizarLinha(indice, 'peso', e.target.value)} />
+                      <Input type="number" step="any" inputMode="decimal" value={linha.peso} onChange={(e) => atualizarLinha(indice, 'peso', e.target.value)} />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">@ (opcional)</label>
-                      <Input type="number" step="0.01" inputMode="decimal" value={linha.valor} placeholder={valorPadrao || '—'} onChange={(e) => atualizarLinha(indice, 'valor', e.target.value)} />
+                      <Input type="number" step="any" inputMode="decimal" value={linha.valor} placeholder={valorPadrao || '—'} onChange={(e) => atualizarLinha(indice, 'valor', e.target.value)} />
                     </div>
                   </div>
                   {linhas.length > 1 && (

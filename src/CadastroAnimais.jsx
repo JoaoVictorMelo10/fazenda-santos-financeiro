@@ -149,7 +149,7 @@ function CadastroAnimais() {
                   <Input id="novoLoteNome" value={novoLoteNome} onChange={(e) => setNovoLoteNome(e.target.value)} placeholder="Ex.: Compra 19/07" />
                 </Campo>
                 <Campo rotulo="Valor por @ do lote (R$)" id="novoLoteValor" dica="Todos os animais do lote entram com esse valor">
-                  <Input id="novoLoteValor" type="number" step="0.01" inputMode="decimal" value={novoLoteValor} onChange={(e) => setNovoLoteValor(e.target.value)} />
+                  <Input id="novoLoteValor" type="number" step="any" inputMode="decimal" value={novoLoteValor} onChange={(e) => setNovoLoteValor(e.target.value)} />
                 </Campo>
                 <Botao type="button" variante="fantasma" tamanho="pequeno" onClick={() => { setCriandoLoteNovo(false); setNovoLoteNome(''); setNovoLoteValor('') }}>
                   Cancelar novo lote
@@ -170,10 +170,10 @@ function CadastroAnimais() {
 
           <div className="grid grid-cols-2 gap-3">
             <Campo rotulo="Peso (arrobas)" id="peso">
-              <Input id="peso" type="number" step="0.01" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} required />
+              <Input id="peso" type="number" step="any" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} required />
             </Campo>
             <Campo rotulo="Valor por @ (R$)" id="valor" dica={valor === '' && valorDoLote ? `Vazio = usa o do lote (${moeda(valorDoLote)})` : undefined}>
-              <Input id="valor" type="number" step="0.01" inputMode="decimal" value={valor} placeholder={valorDoLote ? String(valorDoLote) : ''} onChange={(e) => setValor(e.target.value)} />
+              <Input id="valor" type="number" step="any" inputMode="decimal" value={valor} placeholder={valorDoLote ? String(valorDoLote) : ''} onChange={(e) => setValor(e.target.value)} />
             </Campo>
           </div>
 
@@ -190,7 +190,7 @@ function CadastroAnimais() {
             <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
           </Campo>
           <Campo rotulo="Peso alvo de venda (@)" id="pesoAlvo" dica="Opcional — com ele a projeção de lucro já sai pronta">
-            <Input id="pesoAlvo" type="number" step="0.01" inputMode="decimal" value={pesoAlvo} onChange={(e) => setPesoAlvo(e.target.value)} />
+            <Input id="pesoAlvo" type="number" step="any" inputMode="decimal" value={pesoAlvo} onChange={(e) => setPesoAlvo(e.target.value)} />
           </Campo>
         </Cartao>
 
