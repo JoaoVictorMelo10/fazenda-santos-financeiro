@@ -86,15 +86,11 @@ function RegistroVenda() {
         .from('animais')
         .select('id, status')
         .eq('numero_ferro', Number(l.ferro))
+        .eq('status', 'ativo')
         .maybeSingle()
 
       if (!animal) {
-        setErro(`Ferro nº ${l.ferro} não encontrado. Confira a lista antes de confirmar.`)
-        setEnviando(false)
-        return
-      }
-      if (animal.status !== 'ativo') {
-        setErro(`Ferro nº ${l.ferro} já está como "${animal.status === 'vendido' ? 'vendido' : 'perda'}".`)
+        setErro(`Nenhum animal em aberto com o ferro nº ${l.ferro}. Confira o número antes de confirmar.`)
         setEnviando(false)
         return
       }
@@ -150,11 +146,11 @@ function RegistroVenda() {
                   <div className="grid grid-cols-2 gap-2 flex-1">
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">Ferro</label>
-                      <Input type="number" inputMode="numeric" value={linha.ferro} onChange={(e) => atualizarLinha(indice, 'ferro', e.target.value)} />
+                      <Input type="number" min="1" inputMode="numeric" value={linha.ferro} onChange={(e) => atualizarLinha(indice, 'ferro', e.target.value)} />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">Peso saída (@)</label>
-                      <Input type="number" step="any" inputMode="decimal" value={linha.peso} onChange={(e) => atualizarLinha(indice, 'peso', e.target.value)} />
+                      <Input type="number" min="0" step="any" inputMode="decimal" value={linha.peso} onChange={(e) => atualizarLinha(indice, 'peso', e.target.value)} />
                     </div>
                   </div>
                   {linhas.length > 1 && (

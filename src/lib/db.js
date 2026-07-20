@@ -57,6 +57,7 @@ async function resolverAnimalId(supabase, payload, numeroFerroPendente) {
     .from('animais')
     .select('id')
     .eq('numero_ferro', numeroFerroPendente)
+    .eq('status', 'ativo')
     .single()
   if (error || !animal) return { erro: `Ferro nº ${numeroFerroPendente} não encontrado no sistema` }
   return { payload: { ...payload, animal_id: animal.id } }

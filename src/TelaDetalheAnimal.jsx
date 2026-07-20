@@ -40,6 +40,9 @@ function ExibirAnimal() {
       .from('animais')
       .select('*, lotes(nome)')
       .eq('numero_ferro', numero_ferro)
+      .order('status', { ascending: true }) // 'ativo' vem antes de 'perda'/'vendido'
+      .order('data_entrada', { ascending: false })
+      .limit(1)
       .maybeSingle()
     setAnimal(animalData)
     setCarregando(false)

@@ -57,6 +57,7 @@ function LancamentoCusto() {
         .from('animais')
         .select('id')
         .eq('numero_ferro', Number(ferro))
+        .eq('status', 'ativo')
         .maybeSingle()
 
       if (erroAnimal || !animal) {

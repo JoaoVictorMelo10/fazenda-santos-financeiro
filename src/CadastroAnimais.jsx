@@ -64,6 +64,14 @@ function CadastroAnimais() {
       setErro('Preencha número do ferro, data e peso.')
       return
     }
+    if (Number(ferro) <= 0) {
+      setErro('O número do ferro precisa ser maior que zero.')
+      return
+    }
+    if (Number(peso) <= 0) {
+      setErro('O peso precisa ser maior que zero.')
+      return
+    }
     if (!valorEfetivo) {
       setErro('Informe o valor da arroba — no animal ou no lote.')
       return
@@ -115,7 +123,7 @@ function CadastroAnimais() {
     setEnviando(false)
 
     if (error) {
-      setErro(error.code === '23505' ? `Já existe um animal com o ferro nº ${ferro}.` : 'Erro ao cadastrar: ' + error.message)
+      setErro(error.code === '23505' ? `Já existe um animal EM ABERTO com o ferro nº ${ferro}. Só é possível reusar o número depois que o anterior for vendido ou dado como perda.` : 'Erro ao cadastrar: ' + error.message)
       return
     }
 
@@ -161,7 +169,7 @@ function CadastroAnimais() {
 
         <Cartao className="space-y-4">
           <Campo rotulo="Número do ferro" id="ferro" dica="O número marcado no couro">
-            <Input id="ferro" type="number" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} required />
+            <Input id="ferro" type="number" min="1" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} required />
           </Campo>
 
           <Campo rotulo="Data de entrada" id="data" dica="Já vem com hoje — mude só se for outro dia">
@@ -170,7 +178,7 @@ function CadastroAnimais() {
 
           <div className="grid grid-cols-2 gap-3">
             <Campo rotulo="Peso (arrobas)" id="peso">
-              <Input id="peso" type="number" step="any" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} required />
+              <Input id="peso" type="number" min="0" step="any" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} required />
             </Campo>
             <Campo rotulo="Valor por @ (R$)" id="valor" dica={valor === '' && valorDoLote ? `Vazio = usa o do lote (${moeda(valorDoLote)})` : undefined}>
               <Input id="valor" type="number" step="any" inputMode="decimal" value={valor} placeholder={valorDoLote ? String(valorDoLote) : ''} onChange={(e) => setValor(e.target.value)} />
