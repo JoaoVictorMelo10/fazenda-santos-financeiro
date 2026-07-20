@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { Home, PawPrint, CirclePlus, ChartColumn, Settings } from 'lucide-react'
+import { Home, PawPrint, CirclePlus, Layers, Settings } from 'lucide-react'
 
 const itens = [
   { rota: '/painel-principal', rotulo: 'Painel', Icone: Home },
-  { rota: '/lista-animais', rotulo: 'Animais', Icone: PawPrint },
+  { rota: '/lotes', rotulo: 'Lotes', Icone: Layers },
   { rota: '/lancamento-custo', rotulo: 'Lançar', Icone: CirclePlus, destaque: true },
-  { rota: '/relatorios', rotulo: 'Relatórios', Icone: ChartColumn },
+  { rota: '/lista-animais', rotulo: 'Animais', Icone: PawPrint },
   { rota: '/configuracoes', rotulo: 'Ajustes', Icone: Settings },
 ]
 
@@ -18,7 +18,7 @@ export default function BarraInferior() {
             key={rota}
             to={rota}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[64px] transition-colors ${
+              `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] transition-colors ${
                 isActive && !destaque ? 'text-primary' : 'text-text-soft'
               }`
             }

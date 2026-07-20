@@ -6,7 +6,7 @@ import BarraInferior from "./componentes/BarraInferior"
 import { Cartao, EstadoVazio, Esqueleto } from "./componentes/UI"
 import { moeda, removerCorrigidos, rotulosCategoria } from "./lib/formato"
 import { buscarPrecoArroba } from "./lib/preco"
-import { LogOut, WifiOff, PawPrint, ClipboardPlus, Handshake, TrendingUp } from "lucide-react"
+import { LogOut, WifiOff, PawPrint, ClipboardPlus, Handshake, TrendingUp, ChartColumn } from "lucide-react"
 
 // Premissa da projeção do rebanho: ganho de 1@ por mês, limitado ao peso
 // alvo do animal (ou a 12 meses de ganho, pra quem não tem alvo definido).
@@ -174,10 +174,11 @@ function PainelPrincipal() {
           </>
         )}
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <BotaoAtalho to="/lancamento-custo" Icone={ClipboardPlus} rotulo="Lançar custo" />
+        <div className="grid grid-cols-4 gap-2 mb-6">
           <BotaoAtalho to="/cadastro-animais" Icone={PawPrint} rotulo="Cadastrar" />
           <BotaoAtalho to="/registro-venda" Icone={Handshake} rotulo="Vender" />
+          <BotaoAtalho to="/lancamento-custo" Icone={ClipboardPlus} rotulo="Custo" />
+          <BotaoAtalho to="/relatorios" Icone={ChartColumn} rotulo="Relatórios" />
         </div>
 
         <h2 className="font-display text-lg font-semibold mb-2">Últimos custos</h2>
@@ -221,11 +222,11 @@ function PainelPrincipal() {
 
 function BotaoAtalho({ to, Icone, rotulo }) {
   return (
-    <Link to={to} className="bg-surface border border-border rounded-2xl py-4 flex flex-col items-center gap-2 hover:border-primary active:scale-[0.97] transition-all duration-150 shadow-[0_1px_2px_rgba(29,34,28,0.04)]">
-      <span className="bg-primary-soft text-primary rounded-full p-2.5">
-        <Icone size={22} strokeWidth={2.2} />
+    <Link to={to} className="bg-surface border border-border rounded-2xl py-3 flex flex-col items-center gap-1.5 hover:border-primary active:scale-[0.97] transition-all duration-150 shadow-[0_1px_2px_rgba(29,34,28,0.04)]">
+      <span className="bg-primary-soft text-primary rounded-full p-2">
+        <Icone size={20} strokeWidth={2.2} />
       </span>
-      <span className="text-sm font-semibold text-center leading-tight">{rotulo}</span>
+      <span className="text-xs font-semibold text-center leading-tight">{rotulo}</span>
     </Link>
   )
 }
