@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Home, PawPrint, CirclePlus, Layers, Settings } from 'lucide-react'
+import { Home, CirclePlus, Layers, Settings } from 'lucide-react'
+import IconeBoi from './IconeBoi'
 
 const itens = [
   { rota: '/painel-principal', rotulo: 'Painel', Icone: Home },
   { rota: '/lotes', rotulo: 'Lotes', Icone: Layers },
   { rota: '/lancamento-custo', rotulo: 'Lançar', Icone: CirclePlus, destaque: true },
-  { rota: '/lista-animais', rotulo: 'Animais', Icone: PawPrint },
+  { rota: '/lista-animais', rotulo: 'Animais', Icone: IconeBoi },
   { rota: '/configuracoes', rotulo: 'Ajustes', Icone: Settings },
 ]
 

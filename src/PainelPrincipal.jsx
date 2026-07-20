@@ -6,7 +6,8 @@ import BarraInferior from "./componentes/BarraInferior"
 import { Cartao, EstadoVazio, Esqueleto } from "./componentes/UI"
 import { moeda, removerCorrigidos, rotulosCategoria } from "./lib/formato"
 import { buscarPrecoArroba } from "./lib/preco"
-import { LogOut, WifiOff, PawPrint, ClipboardPlus, Handshake, TrendingUp, ChartColumn } from "lucide-react"
+import { LogOut, WifiOff, ClipboardPlus, Handshake, TrendingUp, ChartColumn } from "lucide-react"
+import IconeBoi from "./componentes/IconeBoi"
 
 // Premissa da projeção do rebanho: ganho de 1@ por mês, limitado ao peso
 // alvo do animal (ou a 12 meses de ganho, pra quem não tem alvo definido).
@@ -175,7 +176,7 @@ function PainelPrincipal() {
         )}
 
         <div className="grid grid-cols-4 gap-2 mb-6">
-          <BotaoAtalho to="/cadastro-animais" Icone={PawPrint} rotulo="Cadastrar" />
+          <BotaoAtalho to="/cadastro-animais" Icone={IconeBoi} rotulo="Cadastrar" />
           <BotaoAtalho to="/registro-venda" Icone={Handshake} rotulo="Vender" />
           <BotaoAtalho to="/lancamento-custo" Icone={ClipboardPlus} rotulo="Custo" />
           <BotaoAtalho to="/relatorios" Icone={ChartColumn} rotulo="Relatórios" />
