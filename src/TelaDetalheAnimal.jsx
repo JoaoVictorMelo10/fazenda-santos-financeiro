@@ -95,7 +95,7 @@ function ExibirAnimal() {
     buscarPrecoArroba().then((resultado) => {
       if (resultado?.preco) {
         setPrecoArroba((atual) => atual || String(resultado.preco))
-        setFontePreco(resultado.fonte)
+        setFontePreco(resultado)
       }
     })
   }, [])
@@ -342,7 +342,7 @@ function ExibirAnimal() {
                 <Campo rotulo="Peso alvo (@)" id="pesoAlvo">
                   <Input id="pesoAlvo" type="number" step="0.01" inputMode="decimal" value={pesoAlvo} onChange={(e) => setPesoAlvo(e.target.value)} />
                 </Campo>
-                <Campo rotulo="Preço da @ (R$)" id="preco" dica={fontePreco === 'cepea' ? 'Preço CEPEA de hoje' : precoArroba ? 'Edite se quiser simular' : 'Digite o preço do dia'}>
+                <Campo rotulo="Preço da @ (R$)" id="preco" dica={fontePreco?.fonte === 'auto' ? `Preço de hoje (${fontePreco.rotulo})` : precoArroba ? 'Edite se quiser simular' : 'Digite o preço do dia'}>
                   <Input id="preco" type="number" step="0.01" inputMode="decimal" value={precoArroba} onChange={(e) => setPrecoArroba(e.target.value)} />
                 </Campo>
                 <Campo rotulo="Ganho por mês (@)" id="ganho">
@@ -357,7 +357,7 @@ function ExibirAnimal() {
             {pesoAlvoNum && !precoNum && (
               <div className="bg-surface-2 rounded-xl p-4 anima-pop">
                 <p className="text-text-soft text-sm">
-                  Falta o <strong>preço da arroba</strong> pra calcular. Quando o backend estiver ligado ele vem sozinho do CEPEA — por enquanto, {ajustando ? 'digite o preço do dia no campo acima' : 'toque em "Ajustar" e digite o preço do dia'}. O resultado aparece na hora, sem botão de confirmar.
+                  Falta o <strong>preço da arroba</strong> pra calcular. Quando o backend estiver ligado ele vem sozinho (cotação MG Norte) — por enquanto, {ajustando ? 'digite o preço do dia no campo acima' : 'toque em "Ajustar" e digite o preço do dia'}. O resultado aparece na hora, sem botão de confirmar.
                 </p>
                 {!ajustando && (
                   <Botao variante="secundaria" tamanho="pequeno" className="mt-2" onClick={() => setAjustando(true)}>
@@ -379,7 +379,7 @@ function ExibirAnimal() {
                   <ValorResultado valor={projecao.resultado} sufixo={projecao.margem !== null ? ` (${projecao.margem}%)` : ''} />
                 </div>
                 <p className="text-xs text-text-soft pt-1">
-                  Estimativa com o preço de hoje{fontePreco === 'cepea' ? ' (CEPEA)' : ''} e ganho de peso suposto. O valor real na venda pode mudar.
+                  Estimativa com o preço de hoje{fontePreco?.rotulo ? ` (${fontePreco.rotulo})` : ''} e ganho de peso suposto. O valor real na venda pode mudar.
                 </p>
               </div>
             )}

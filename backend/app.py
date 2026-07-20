@@ -36,7 +36,7 @@ CORS(app, origins=[_origem] if _origem else "*")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
-_cache_preco = {"valor": None, "data": None, "buscado_em": 0}
+_cache_preco = {"valor": None, "data": None, "rotulo": None, "buscado_em": 0}
 CACHE_SEGUNDOS = 6 * 60 * 60
 
 CABECALHOS_NAVEGADOR = {
@@ -65,21 +65,29 @@ def _valor_plausivel(bruto):
     return valor if 200 <= valor <= 800 else None
 
 
-def _extrair_preco(texto):
-    """Pega o valor a vista do Indicador Boi Gordo CEPEA/ESALQ.
+def _preco_mg_norte(texto):
+    """Cotacao regional 'MG Norte' (Scot Consultoria, boi gordo a vista) —
+    e o preco que a fazenda de fato recebe na regiao."""
+    ancora = re.search(r"MG\s*Norte", texto, re.IGNORECASE)
+    if not ancora:
+        return None
+    trecho = texto[ancora.end():ancora.end() + 200]
+    for bruto in re.findall(r"(\d{3}[.,]\d{2})", trecho):
+        valor = _valor_plausivel(bruto)
+        if valor:
+            return valor  # primeira coluna apos o nome = a vista
+    return None
 
-    No espelho (Noticias Agricolas) a pagina tem muitos numeros antes do que
-    interessa (dolar, temperatura, outras cotacoes), entao ancoramos a busca
-    logo depois do titulo do indicador. Se nao achar a ancora, cai pro
-    primeiro valor plausivel de arroba na pagina."""
+
+def _preco_indicador_sp(texto):
+    """Indicador Boi Gordo CEPEA/ESALQ (Sao Paulo) — referencia nacional,
+    usado como reserva quando a cotacao regional nao aparece."""
     ancora = re.search(r"Indicador do Boi Gordo\s*Esalq", texto, re.IGNORECASE)
     trecho = texto[ancora.start():ancora.start() + 1500] if ancora else texto
-
     for bruto in re.findall(r"(\d{3}[.,]\d{2})", trecho):
         valor = _valor_plausivel(bruto)
         if valor:
             return valor
-
     for bruto in re.findall(r"R\$\s*([\d\.]{1,7},\d{2})", texto):
         valor = _valor_plausivel(bruto)
         if valor:
@@ -110,23 +118,36 @@ def raiz():
 def preco_arroba():
     agora = time.time()
     if _cache_preco["valor"] and (agora - _cache_preco["buscado_em"] < CACHE_SEGUNDOS):
-        return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "fonte": "cache"})
+        return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "rotulo": _cache_preco["rotulo"], "fonte": "cache"})
 
     erros = []
     for nome, url in FONTES_PRECO:
         try:
             resposta = requests.get(url, headers=CABECALHOS_NAVEGADOR, timeout=12)
             resposta.raise_for_status()
-            valor = _extrair_preco(resposta.text)
+
+            # Preferencia: cotacao regional MG Norte (o que a fazenda recebe).
+            # Reserva: Indicador CEPEA/ESALQ de SP (referencia nacional).
+            valor = _preco_mg_norte(resposta.text)
+            rotulo = "MG Norte"
+            if not valor:
+                valor = _preco_indicador_sp(resposta.text)
+                rotulo = "CEPEA/SP"
+
             if valor:
-                _cache_preco.update({"valor": valor, "data": _extrair_data(resposta.text), "buscado_em": agora})
-                return jsonify({"preco": valor, "data": _cache_preco["data"], "fonte": nome})
+                _cache_preco.update({
+                    "valor": valor,
+                    "data": _extrair_data(resposta.text),
+                    "rotulo": rotulo,
+                    "buscado_em": agora,
+                })
+                return jsonify({"preco": valor, "data": _cache_preco["data"], "rotulo": rotulo, "fonte": nome})
             erros.append(f"{nome}: preco nao encontrado no retorno")
         except Exception as erro:
             erros.append(f"{nome}: {erro}")
 
     if _cache_preco["valor"]:
-        return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "fonte": "cache_antigo"})
+        return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "rotulo": _cache_preco["rotulo"], "fonte": "cache_antigo"})
     return jsonify({"preco": None, "erro": "Nao foi possivel buscar o preco agora. Informe manualmente.", "detalhes": erros}), 502
 
 

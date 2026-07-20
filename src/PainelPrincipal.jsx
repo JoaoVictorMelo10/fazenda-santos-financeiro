@@ -104,7 +104,7 @@ function PainelPrincipal() {
             <div className="mt-3 inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm font-semibold anima-pop">
               <TrendingUp size={16} />
               Arroba hoje: {moeda(arroba.preco)}
-              <span className="text-white/60 font-normal">CEPEA</span>
+              <span className="text-white/60 font-normal">{arroba.rotulo || 'CEPEA'}</span>
             </div>
           )}
         </div>
@@ -149,7 +149,7 @@ function PainelPrincipal() {
                       <div className="flex justify-between"><span className="text-text-soft">Já investido (compra + custos)</span><span className="numeros font-medium">{moeda(resumo.investido, 0)}</span></div>
                     </div>
                     <p className="text-xs text-text-soft mt-2">
-                      Estimativa: preço CEPEA de hoje e ganho de {GANHO_ARROBA_MES}@ por mês desde a entrada de cada animal.
+                      Estimativa: arroba de hoje ({arroba?.rotulo || 'CEPEA'}) e ganho de {GANHO_ARROBA_MES}@ por mês desde a entrada de cada animal.
                     </p>
                   </>
                 ) : (
