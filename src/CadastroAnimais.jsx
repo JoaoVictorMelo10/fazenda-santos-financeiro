@@ -32,21 +32,26 @@ function CadastroAnimais() {
     supabase.from('lotes').select('id, nome, valor_arroba_lote').order('nome').then(({ data }) => setLotes(data || []))
   }, [])
 
-  // Escolheu um lote que já tem valor por arroba definido? Preenche sozinho.
-  function escolherLote(id) {
-    setLoteSelecionado(id)
-    const lote = lotes.find((l) => l.id === id)
-    if (lote?.valor_arroba_lote && !valor) setValor(String(lote.valor_arroba_lote))
-  }
+  // Valor da arroba que vem do lote (novo ou existente), se houver
+  const valorDoLote = criandoLoteNovo
+    ? (Number(novoLoteValor) || null)
+    : (Number(lotes.find((l) => l.id === loteSelecionado)?.valor_arroba_lote) || null)
 
-  const valorTotal = (Number(peso) || 0) * (Number(valor) || 0)
+  // O animal usa o próprio valor se digitado; senão, herda o do lote
+  const valorEfetivo = valor !== '' ? Number(valor) : valorDoLote
+
+  const valorTotal = (Number(peso) || 0) * (valorEfetivo || 0)
 
   async function enviarCadastro(evento) {
     evento.preventDefault()
     setErro('')
 
-    if (!ferro || !data || !peso || !valor) {
-      setErro('Preencha número do ferro, data, peso e valor da arroba.')
+    if (!ferro || !data || !peso) {
+      setErro('Preencha número do ferro, data e peso.')
+      return
+    }
+    if (!valorEfetivo) {
+      setErro('Informe o valor da arroba — no animal ou no lote.')
       return
     }
 
@@ -60,7 +65,7 @@ function CadastroAnimais() {
         .insert([{
           nome: novoLoteNome.trim(),
           data_compra: data,
-          valor_arroba_lote: novoLoteValor ? Number(novoLoteValor) : (valor ? Number(valor) : null),
+          valor_arroba_lote: valorDoLote || valorEfetivo,
           criado_por: sessao?.user?.id,
         }])
         .select()
@@ -79,7 +84,7 @@ function CadastroAnimais() {
       numero_ferro: Number(ferro),
       data_entrada: data,
       peso_entrada_arr: Number(peso),
-      valor_arroba_compra: Number(valor),
+      valor_arroba_compra: valorEfetivo,
       lote_id: loteId,
       observacao: observacao || null,
       peso_alvo_arr: pesoAlvo ? Number(pesoAlvo) : null,
@@ -104,6 +109,34 @@ function CadastroAnimais() {
     <Tela titulo="Cadastrar animal" voltar>
       <form onSubmit={enviarCadastro} className="space-y-4 anima-lista">
         <Cartao className="space-y-4">
+          <Campo rotulo="Lote" id="lote" dica={!criandoLoteNovo ? 'Comprou vários juntos? Coloque no mesmo lote' : undefined}>
+            {!criandoLoteNovo ? (
+              <div className="flex gap-2">
+                <Select id="lote" className="flex-1" value={loteSelecionado} onChange={(e) => setLoteSelecionado(e.target.value)}>
+                  <option value="">Sem lote (compra avulsa)</option>
+                  {lotes.map((lote) => <option key={lote.id} value={lote.id}>{lote.nome}</option>)}
+                </Select>
+                <Botao type="button" variante="secundaria" onClick={() => setCriandoLoteNovo(true)} aria-label="Criar novo lote">
+                  <Plus size={20} />
+                </Botao>
+              </div>
+            ) : (
+              <div className="bg-surface-2 rounded-xl p-4 space-y-4">
+                <Campo rotulo="Nome do novo lote" id="novoLoteNome">
+                  <Input id="novoLoteNome" value={novoLoteNome} onChange={(e) => setNovoLoteNome(e.target.value)} />
+                </Campo>
+                <Campo rotulo="Valor por @ do lote (R$)" id="novoLoteValor" dica="Todos os animais do lote entram com esse valor">
+                  <Input id="novoLoteValor" type="number" step="0.01" inputMode="decimal" value={novoLoteValor} onChange={(e) => setNovoLoteValor(e.target.value)} />
+                </Campo>
+                <Botao type="button" variante="fantasma" tamanho="pequeno" onClick={() => { setCriandoLoteNovo(false); setNovoLoteNome(''); setNovoLoteValor('') }}>
+                  Cancelar novo lote
+                </Botao>
+              </div>
+            )}
+          </Campo>
+        </Cartao>
+
+        <Cartao className="space-y-4">
           <Campo rotulo="Número do ferro" id="ferro" dica="O número marcado no couro">
             <Input id="ferro" type="number" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} required />
           </Campo>
@@ -116,8 +149,12 @@ function CadastroAnimais() {
             <Campo rotulo="Peso (arrobas)" id="peso">
               <Input id="peso" type="number" step="0.01" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} required />
             </Campo>
-            <Campo rotulo="Valor por @ (R$)" id="valor">
-              <Input id="valor" type="number" step="0.01" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} required />
+            <Campo
+              rotulo="Valor por @ (R$)"
+              id="valor"
+              dica={valor === '' && valorDoLote ? `Vazio = usa o do lote (${moeda(valorDoLote)})` : undefined}
+            >
+              <Input id="valor" type="number" step="0.01" inputMode="decimal" value={valor} placeholder={valorDoLote ? String(valorDoLote) : ''} onChange={(e) => setValor(e.target.value)} />
             </Campo>
           </div>
 
@@ -130,40 +167,11 @@ function CadastroAnimais() {
         </Cartao>
 
         <Cartao className="space-y-4">
-          <Campo rotulo="Lote" id="lote" dica="Comprou vários juntos? Coloque no mesmo lote">
-            {!criandoLoteNovo ? (
-              <div className="flex gap-2">
-                <Select id="lote" className="flex-1" value={loteSelecionado} onChange={(e) => escolherLote(e.target.value)}>
-                  <option value="">Sem lote (compra avulsa)</option>
-                  {lotes.map((lote) => <option key={lote.id} value={lote.id}>{lote.nome}</option>)}
-                </Select>
-                <Botao type="button" variante="secundaria" onClick={() => setCriandoLoteNovo(true)} aria-label="Criar novo lote">
-                  <Plus size={20} />
-                </Botao>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Input placeholder="Nome do novo lote" value={novoLoteNome} onChange={(e) => setNovoLoteNome(e.target.value)} />
-                <div className="flex gap-2">
-                  <Input placeholder="Valor por @ do lote (opcional)" type="number" step="0.01" inputMode="decimal" value={novoLoteValor} onChange={(e) => setNovoLoteValor(e.target.value)} />
-                  <Botao type="button" variante="fantasma" onClick={() => { setCriandoLoteNovo(false); setNovoLoteNome(''); setNovoLoteValor('') }}>
-                    Cancelar
-                  </Botao>
-                </div>
-              </div>
-            )}
-          </Campo>
-
           <Campo rotulo="Observação" id="observacao" dica="Opcional">
             <Input id="observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
           </Campo>
-        </Cartao>
 
-        <Cartao className="space-y-4">
-          <p className="font-display text-lg font-semibold -mb-1">Meta de venda</p>
-          <p className="text-text-soft text-sm -mt-3">Opcional. Se preencher, a projeção de lucro já usa esse peso como alvo.</p>
-
-          <Campo rotulo="Peso alvo (@)" id="pesoAlvo">
+          <Campo rotulo="Peso alvo de venda (@)" id="pesoAlvo" dica="Opcional — com ele a projeção de lucro já sai pronta">
             <Input id="pesoAlvo" type="number" step="0.01" inputMode="decimal" value={pesoAlvo} onChange={(e) => setPesoAlvo(e.target.value)} />
           </Campo>
         </Cartao>
