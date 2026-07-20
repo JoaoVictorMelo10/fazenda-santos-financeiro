@@ -69,6 +69,14 @@ function RegistroVenda() {
       return
     }
 
+    // Um animal só pode ser vendido uma vez — barra ferro repetido no mesmo grupo
+    const ferros = preenchidas.map((l) => String(l.ferro).trim())
+    const repetido = ferros.find((f, i) => ferros.indexOf(f) !== i)
+    if (repetido) {
+      setErro(`O ferro nº ${repetido} está repetido na lista. Cada animal só pode entrar uma vez na venda.`)
+      return
+    }
+
     setEnviando(true)
 
     // Confere todos os ferros antes de vender qualquer um (tudo ou nada na validação)
