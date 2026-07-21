@@ -6,7 +6,7 @@ import BarraInferior from "./componentes/BarraInferior"
 import { Cartao, EstadoVazio, Esqueleto } from "./componentes/UI"
 import { moeda, removerCorrigidos, rotulosCategoria } from "./lib/formato"
 import { buscarPrecoArroba } from "./lib/preco"
-import { LogOut, WifiOff, ClipboardPlus, Handshake, TrendingUp, ChartColumn } from "lucide-react"
+import { LogOut, WifiOff, ClipboardPlus, Handshake, TrendingUp, ChartColumn, Settings } from "lucide-react"
 import IconeBoi from "./componentes/IconeBoi"
 
 // Premissa da projeção do rebanho: ganho de 1@ por mês, limitado ao peso
@@ -96,9 +96,14 @@ function PainelPrincipal() {
               <p className="text-white/70 text-sm font-semibold capitalize">{dataHoje}</p>
               <h1 className="font-display text-2xl font-semibold">Olá, {primeiroNome}</h1>
             </div>
-            <button onClick={logout} aria-label="Sair da conta" className="p-2.5 rounded-full hover:bg-white/10 active:scale-95 transition-transform">
-              <LogOut size={22} />
-            </button>
+            <div className="flex items-center gap-1">
+              <Link to="/configuracoes" aria-label="Configurações" className="p-2.5 rounded-full hover:bg-white/10 active:scale-95 transition-transform">
+                <Settings size={22} />
+              </Link>
+              <button onClick={logout} aria-label="Sair da conta" className="p-2.5 rounded-full hover:bg-white/10 active:scale-95 transition-transform">
+                <LogOut size={22} />
+              </button>
+            </div>
           </div>
 
           {arroba?.preco && (
