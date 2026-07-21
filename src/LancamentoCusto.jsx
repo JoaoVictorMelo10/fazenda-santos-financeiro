@@ -14,6 +14,7 @@ function LancamentoCusto() {
   const [ferro, setFerro] = useState('')
   const [loteId, setLoteId] = useState('')
   const [lotes, setLotes] = useState([])
+  const [totalAtivos, setTotalAtivos] = useState(null)
   const [categoria, setCategoria] = useState('racao')
   const [valor, setValor] = useState('')
   const [data, setData] = useState(hojeISO())
@@ -26,6 +27,9 @@ function LancamentoCusto() {
   useEffect(() => {
     // animais(count) traz quantas cabeças cada lote tem — usado no aviso de rateio
     supabase.from('lotes').select('id, nome, animais(count)').order('nome').then(({ data }) => setLotes(data || []))
+    // quantas cabeças estão na fazenda agora — usado no aviso de rateio do rebanho
+    supabase.from('animais').select('id', { count: 'exact', head: true }).eq('status', 'ativo')
+      .then(({ count }) => setTotalAtivos(count ?? 0))
   }, [])
 
   const loteEscolhido = lotes.find((l) => l.id === loteId)
@@ -46,6 +50,10 @@ function LancamentoCusto() {
     }
     if (alvo === 'lote' && !loteId) {
       setErro('Escolha o lote.')
+      return
+    }
+    if (alvo === 'rebanho' && !totalAtivos) {
+      setErro('Você ainda não tem animais na fazenda pra ratear esse custo.')
       return
     }
 
@@ -119,9 +127,10 @@ function LancamentoCusto() {
 
           <div>
             <span className="block text-base font-semibold text-text mb-1.5">Pra quem é esse custo</span>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <BotaoSegmento ativo={alvo === 'ferro'} onClick={() => setAlvo('ferro')} rotulo="Um animal" />
-              <BotaoSegmento ativo={alvo === 'lote'} onClick={() => setAlvo('lote')} rotulo="Um lote inteiro" />
+              <BotaoSegmento ativo={alvo === 'lote'} onClick={() => setAlvo('lote')} rotulo="Um lote" />
+              <BotaoSegmento ativo={alvo === 'rebanho'} onClick={() => setAlvo('rebanho')} rotulo="O rebanho" />
             </div>
           </div>
 
@@ -143,6 +152,25 @@ function LancamentoCusto() {
                 </p>
               )}
             </Campo>
+          )}
+
+          {alvo === 'rebanho' && (
+            <div className="rounded-xl bg-surface-2 px-3.5 py-3">
+              {totalAtivos > 0 ? (
+                <p className="text-sm text-text-soft">
+                  Vai valer pra todo o rebanho: {totalAtivos} {totalAtivos === 1 ? 'cabeça' : 'cabeças'} na fazenda hoje.
+                  {valor && (
+                    <> Fica <span className="font-semibold text-text">{moeda(Number(valor) / totalAtivos)}</span> por animal.</>
+                  )}
+                  <br />
+                  <span className="text-text-soft/80">O rateio usa as cabeças que estavam na fazenda na data do custo.</span>
+                </p>
+              ) : (
+                <p className="text-sm text-text-soft">
+                  {totalAtivos === null ? 'Contando as cabeças…' : 'Você ainda não tem animais na fazenda pra ratear esse custo.'}
+                </p>
+              )}
+            </div>
           )}
         </Cartao>
 

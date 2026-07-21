@@ -16,7 +16,6 @@ function ExibirAnimal() {
   const [carregando, setCarregando] = useState(true)
   const [custosAnimal, setCustosAnimal] = useState([])
   const [custoAcumulado, setCustoAcumulado] = useState(0)
-  const [cabecasNoLote, setCabecasNoLote] = useState(1)
   const [venda, setVenda] = useState(null)
 
   // Premissas da projeção — o app preenche tudo sozinho, mas deixa ajustar
@@ -59,28 +58,14 @@ function ExibirAnimal() {
       .maybeSingle()
     setCustoAcumulado(Number(custoView?.custo_acumulado || 0))
 
-    const { data: diretos } = await supabase
-      .from('custos')
+    // A view já traz a fatia certa de cada custo (direto, de lote ou de rebanho)
+    // e já exclui os corrigidos (regra R5).
+    const { data: itens } = await supabase
+      .from('vw_custo_rateado_detalhe')
       .select('*')
       .eq('animal_id', animalData.id)
-
-    let doLote = []
-    if (animalData.lote_id) {
-      const { data } = await supabase
-        .from('custos')
-        .select('*')
-        .eq('lote_id', animalData.lote_id)
-      doLote = data || []
-
-      const { count } = await supabase
-        .from('animais')
-        .select('id', { count: 'exact', head: true })
-        .eq('lote_id', animalData.lote_id)
-      setCabecasNoLote(count || 1)
-    }
-
-    const validos = removerCorrigidos([...(diretos || []), ...doLote])
-    setCustosAnimal(validos.sort((a, b) => new Date(b.data) - new Date(a.data)))
+      .order('data', { ascending: false })
+    setCustosAnimal(itens || [])
 
     if (animalData.status === 'vendido') {
       const { data: vendas } = await supabase
@@ -134,14 +119,14 @@ function ExibirAnimal() {
       return
     }
     const { error } = await supabase.from('custos').insert([{
-      animal_id: corrigindo.animal_id,
-      lote_id: corrigindo.lote_id,
+      animal_id: corrigindo.alvo_animal_id,
+      lote_id: corrigindo.alvo_lote_id,
       categoria: corrigindo.categoria,
       valor: Number(novoValor),
       data: corrigindo.data,
       descricao: corrigindo.descricao,
       lancado_por: sessao?.user?.id,
-      custo_original_id: corrigindo.id,
+      custo_original_id: corrigindo.custo_id,
       justificativa: justificativa.trim(),
     }])
     if (error) {
@@ -307,26 +292,29 @@ function ExibirAnimal() {
         <p className="font-display text-lg font-semibold mb-2">Custos lançados</p>
         <Cartao className="mb-4 divide-y divide-border">
           {custosAnimal.map((custo) => {
-            const rateado = Boolean(custo.lote_id)
-            const valorExibido = rateado ? Number(custo.valor) / cabecasNoLote : Number(custo.valor)
+            const rateado = custo.tipo !== 'animal'
+            const rotuloRateio = custo.tipo === 'lote'
+              ? ' · parte do lote · corrige na tela do lote'
+              : custo.tipo === 'rebanho'
+                ? ' · parte do rebanho'
+                : ''
             return (
-              <div key={custo.id} className="py-2.5 first:pt-0 last:pb-0 flex justify-between items-center gap-2">
+              <div key={custo.custo_id} className="py-2.5 first:pt-0 last:pb-0 flex justify-between items-center gap-2">
                 <div className="min-w-0">
                   <p className="font-medium">
                     {rotulosCategoria[custo.categoria] || custo.categoria}
                     {custo.custo_original_id && <span className="text-warn text-xs font-semibold ml-1.5">corrigido</span>}
                   </p>
                   <p className="text-sm text-text-soft">
-                    {formatarData(custo.data)}
-                    {rateado ? ` · parte do lote (÷${cabecasNoLote}) · corrige na tela do lote` : ''}
+                    {formatarData(custo.data)}{rotuloRateio}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <p className="font-semibold numeros">{moeda(valorExibido)}</p>
+                  <p className="font-semibold numeros">{moeda(Number(custo.valor_rateado))}</p>
                   {animal.status === 'ativo' && !rateado && (
                     <button
                       type="button"
-                      onClick={() => { setCorrigindo(custo); setNovoValor(String(custo.valor)); setJustificativa('') }}
+                      onClick={() => { setCorrigindo(custo); setNovoValor(String(custo.valor_total)); setJustificativa('') }}
                       aria-label="Corrigir este custo"
                       className="p-1.5 text-text-soft rounded-full hover:bg-surface-2"
                     >
@@ -350,7 +338,7 @@ function ExibirAnimal() {
               Corrigir {rotulosCategoria[corrigindo.categoria]} de {formatarData(corrigindo.data)}
             </p>
             <p className="text-text-soft text-sm -mt-2">
-              O lançamento original de {moeda(corrigindo.valor)} fica guardado no histórico; este novo valor entra no lugar dele.
+              O lançamento original de {moeda(corrigindo.valor_total)} fica guardado no histórico; este novo valor entra no lugar dele.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Campo rotulo="Valor correto (R$)" id="novoValor">
