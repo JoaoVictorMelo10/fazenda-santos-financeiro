@@ -9,6 +9,7 @@ import CadastroAnimais from "./CadastroAnimais"
 import ListarAnimais from "./ListaAnimais"
 import LancamentoCusto from "./LancamentoCusto"
 import TelaCustosRebanho from "./TelaCustosRebanho"
+import TelaCustos from "./TelaCustos"
 import RegistroVenda from "./RegistroVenda"
 import PainelPrincipal from "./PainelPrincipal"
 import ExibirAnimal from './TelaDetalheAnimal'
@@ -30,6 +31,7 @@ function App() {
           <Route path='/lista-animais' element={<RotaProtegida><ListarAnimais /></RotaProtegida>} />
           <Route path='/lancamento-custo' element={<RotaProtegida><LancamentoCusto /></RotaProtegida>} />
           <Route path='/custos-rebanho' element={<RotaProtegida><TelaCustosRebanho /></RotaProtegida>} />
+          <Route path='/custos' element={<RotaProtegida><TelaCustos /></RotaProtegida>} />
           <Route path='/registro-venda' element={<RotaProtegida><RegistroVenda /></RotaProtegida>} />
           <Route path='/animal/:numero_ferro' element={<RotaProtegida><ExibirAnimal /></RotaProtegida>} />
           <Route path='/lotes' element={<RotaProtegida><ListaLotes /></RotaProtegida>} />

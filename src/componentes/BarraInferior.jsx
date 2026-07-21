@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Home, CirclePlus, Layers, Settings } from 'lucide-react'
+import { Home, CirclePlus, Layers, Settings, Receipt } from 'lucide-react'
 import IconeBoi from './IconeBoi'
 
 const itens = [
   { rota: '/painel-principal', rotulo: 'Painel', Icone: Home },
   { rota: '/lotes', rotulo: 'Lotes', Icone: Layers },
   { rota: '/lancamento-custo', rotulo: 'Lançar', Icone: CirclePlus, destaque: true },
+  { rota: '/custos', rotulo: 'Custos', Icone: Receipt },
   { rota: '/lista-animais', rotulo: 'Animais', Icone: IconeBoi },
   { rota: '/configuracoes', rotulo: 'Ajustes', Icone: Settings },
 ]
@@ -19,7 +20,7 @@ export default function BarraInferior() {
             key={rota}
             to={rota}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] transition-colors ${
+              `flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl min-w-[50px] transition-colors ${
                 isActive && !destaque ? 'text-primary' : 'text-text-soft'
               }`
             }
