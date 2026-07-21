@@ -36,7 +36,7 @@ CORS(app, origins=[_origem] if _origem else "*")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
-_cache_preco = {"valor": None, "data": None, "rotulo": None, "buscado_em": 0}
+_cache_preco = {"valor": None, "prazo": None, "vaca": None, "data": None, "rotulo": None, "buscado_em": 0}
 CACHE_SEGUNDOS = 6 * 60 * 60
 
 CABECALHOS_NAVEGADOR = {
@@ -65,18 +65,29 @@ def _valor_plausivel(bruto):
     return valor if 200 <= valor <= 800 else None
 
 
-def _preco_mg_norte(texto):
-    """Cotacao regional 'MG Norte' (Scot Consultoria, boi gordo a vista) —
-    e o preco que a fazenda de fato recebe na regiao."""
+def _precos_mg_norte(texto):
+    """Cotacao regional 'MG Norte' (Scot Consultoria). A linha da tabela traz
+    tres colunas, nesta ordem: boi gordo a vista, boi gordo a prazo (30 dias)
+    e vaca gorda a vista. Retorna os tres (a vista e o que a fazenda recebe;
+    prazo e vaca vao como referencia). None se nao achar a linha."""
     ancora = re.search(r"MG\s*Norte", texto, re.IGNORECASE)
     if not ancora:
         return None
-    trecho = texto[ancora.end():ancora.end() + 200]
+    trecho = texto[ancora.end():ancora.end() + 300]
+    valores = []
     for bruto in re.findall(r"(\d{3}[.,]\d{2})", trecho):
         valor = _valor_plausivel(bruto)
         if valor:
-            return valor  # primeira coluna apos o nome = a vista
-    return None
+            valores.append(valor)
+        if len(valores) == 3:
+            break
+    if not valores:
+        return None
+    return {
+        "vista": valores[0],
+        "prazo": valores[1] if len(valores) > 1 else None,
+        "vaca": valores[2] if len(valores) > 2 else None,
+    }
 
 
 def _preco_indicador_sp(texto):
@@ -118,7 +129,7 @@ def raiz():
 def preco_arroba():
     agora = time.time()
     if _cache_preco["valor"] and (agora - _cache_preco["buscado_em"] < CACHE_SEGUNDOS):
-        return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "rotulo": _cache_preco["rotulo"], "fonte": "cache"})
+        return jsonify({"preco": _cache_preco["valor"], "preco_prazo": _cache_preco["prazo"], "preco_vaca": _cache_preco["vaca"], "data": _cache_preco["data"], "rotulo": _cache_preco["rotulo"], "fonte": "cache"})
 
     erros = []
     for nome, url in FONTES_PRECO:
@@ -126,28 +137,34 @@ def preco_arroba():
             resposta = requests.get(url, headers=CABECALHOS_NAVEGADOR, timeout=12)
             resposta.raise_for_status()
 
-            # Preferencia: cotacao regional MG Norte (o que a fazenda recebe).
-            # Reserva: Indicador CEPEA/ESALQ de SP (referencia nacional).
-            valor = _preco_mg_norte(resposta.text)
-            rotulo = "MG Norte"
-            if not valor:
-                valor = _preco_indicador_sp(resposta.text)
+            # Preferencia: cotacao regional MG Norte (o que a fazenda recebe),
+            # com prazo e vaca gorda como referencia. Reserva: Indicador
+            # CEPEA/ESALQ de SP (so a vista).
+            precos = _precos_mg_norte(resposta.text)
+            if precos:
+                valor, prazo, vaca = precos["vista"], precos["prazo"], precos["vaca"]
+                rotulo = "MG Norte"
+            else:
+                valor, prazo, vaca = _preco_indicador_sp(resposta.text), None, None
                 rotulo = "CEPEA/SP"
 
             if valor:
                 _cache_preco.update({
                     "valor": valor,
+                    "prazo": prazo,
+                    "vaca": vaca,
                     "data": _extrair_data(resposta.text),
                     "rotulo": rotulo,
                     "buscado_em": agora,
                 })
-                return jsonify({"preco": valor, "data": _cache_preco["data"], "rotulo": rotulo, "fonte": nome})
+                return jsonify({"preco": valor, "preco_prazo": prazo, "preco_vaca": vaca,
+                                "data": _cache_preco["data"], "rotulo": rotulo, "fonte": nome})
             erros.append(f"{nome}: preco nao encontrado no retorno")
         except Exception as erro:
             erros.append(f"{nome}: {erro}")
 
     if _cache_preco["valor"]:
-        return jsonify({"preco": _cache_preco["valor"], "data": _cache_preco["data"], "rotulo": _cache_preco["rotulo"], "fonte": "cache_antigo"})
+        return jsonify({"preco": _cache_preco["valor"], "preco_prazo": _cache_preco["prazo"], "preco_vaca": _cache_preco["vaca"], "data": _cache_preco["data"], "rotulo": _cache_preco["rotulo"], "fonte": "cache_antigo"})
     return jsonify({"preco": None, "erro": "Nao foi possivel buscar o preco agora. Informe manualmente.", "detalhes": erros}), 502
 
 

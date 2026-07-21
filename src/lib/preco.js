@@ -11,8 +11,8 @@ export function precoGuardado() {
   try {
     const bruto = localStorage.getItem(CHAVE)
     if (!bruto) return null
-    const { preco, rotulo, em } = JSON.parse(bruto)
-    return { preco, rotulo: rotulo || null, em, vencido: Date.now() - em > VALIDADE_MS }
+    const { preco, precoPrazo, precoVaca, rotulo, em } = JSON.parse(bruto)
+    return { preco, precoPrazo: precoPrazo ?? null, precoVaca: precoVaca ?? null, rotulo: rotulo || null, em, vencido: Date.now() - em > VALIDADE_MS }
   } catch {
     return null
   }
@@ -21,11 +21,11 @@ export function precoGuardado() {
 export async function buscarPrecoArroba() {
   const guardado = precoGuardado()
   if (guardado && !guardado.vencido) {
-    return { preco: guardado.preco, rotulo: guardado.rotulo, fonte: 'guardado' }
+    return { preco: guardado.preco, precoPrazo: guardado.precoPrazo, precoVaca: guardado.precoVaca, rotulo: guardado.rotulo, fonte: 'guardado' }
   }
 
   if (!BACKEND_URL) {
-    return guardado ? { preco: guardado.preco, rotulo: guardado.rotulo, fonte: 'guardado_vencido' } : null
+    return guardado ? { preco: guardado.preco, precoPrazo: guardado.precoPrazo, precoVaca: guardado.precoVaca, rotulo: guardado.rotulo, fonte: 'guardado_vencido' } : null
   }
 
   try {
@@ -33,11 +33,13 @@ export async function buscarPrecoArroba() {
     const json = await resposta.json()
     if (json.preco) {
       const rotulo = json.rotulo || 'CEPEA/SP'
-      localStorage.setItem(CHAVE, JSON.stringify({ preco: json.preco, rotulo, em: Date.now() }))
-      return { preco: json.preco, rotulo, fonte: 'auto' }
+      const precoPrazo = json.preco_prazo ?? null
+      const precoVaca = json.preco_vaca ?? null
+      localStorage.setItem(CHAVE, JSON.stringify({ preco: json.preco, precoPrazo, precoVaca, rotulo, em: Date.now() }))
+      return { preco: json.preco, precoPrazo, precoVaca, rotulo, fonte: 'auto' }
     }
   } catch {
     // sem rede ou backend dormindo; cai pro guardado
   }
-  return guardado ? { preco: guardado.preco, rotulo: guardado.rotulo, fonte: 'guardado_vencido' } : null
+  return guardado ? { preco: guardado.preco, precoPrazo: guardado.precoPrazo, precoVaca: guardado.precoVaca, rotulo: guardado.rotulo, fonte: 'guardado_vencido' } : null
 }

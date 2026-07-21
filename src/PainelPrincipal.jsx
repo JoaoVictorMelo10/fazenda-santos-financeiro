@@ -102,10 +102,19 @@ function PainelPrincipal() {
           </div>
 
           {arroba?.preco && (
-            <div className="mt-3 inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm font-semibold anima-pop">
-              <TrendingUp size={16} />
-              Arroba hoje: {moeda(arroba.preco)}
-              <span className="text-white/60 font-normal">{arroba.rotulo || 'CEPEA'}</span>
+            <div className="mt-3 anima-pop">
+              <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm font-semibold">
+                <TrendingUp size={16} />
+                Arroba hoje: {moeda(arroba.preco)}
+                <span className="text-white/60 font-normal">{arroba.rotulo || 'CEPEA'}</span>
+              </div>
+              {(arroba.precoPrazo || arroba.precoVaca) && (
+                <p className="text-white/60 text-xs mt-1.5 pl-1">
+                  {arroba.precoPrazo ? `Boi a prazo: ${moeda(arroba.precoPrazo)}` : ''}
+                  {arroba.precoPrazo && arroba.precoVaca ? ' · ' : ''}
+                  {arroba.precoVaca ? `Vaca gorda: ${moeda(arroba.precoVaca)}` : ''}
+                </p>
+              )}
             </div>
           )}
         </div>
