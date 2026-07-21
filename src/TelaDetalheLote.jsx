@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react"
 import supabase from './supabaseClient.js'
 import { useParams, Link } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 import { Tela } from './componentes/Tela'
 import { Cartao, Selo, EstadoVazio, Esqueleto, MarcaFerro, Campo, Input, Botao, Alerta } from './componentes/UI'
-import { moeda, formatarData } from './lib/formato'
+import { moeda, formatarData, removerCorrigidos, rotulosCategoria } from './lib/formato'
 import { Pencil } from 'lucide-react'
 import { buscarPrecoArroba } from './lib/preco'
 
@@ -12,6 +13,7 @@ const TETO_MESES_SEM_ALVO = 12
 
 function TelaDetalheLote() {
   const { lote_id } = useParams()
+  const { sessao } = useAuth()
   const [resumo, setResumo] = useState(null)
   const [animais, setAnimais] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -21,6 +23,11 @@ function TelaDetalheLote() {
   const [dataEdit, setDataEdit] = useState('')
   const [erroEdit, setErroEdit] = useState('')
   const [salvando, setSalvando] = useState(false)
+  const [custosLote, setCustosLote] = useState([])
+  const [corrigindo, setCorrigindo] = useState(null)
+  const [novoValor, setNovoValor] = useState('')
+  const [justificativa, setJustificativa] = useState('')
+  const [erroCusto, setErroCusto] = useState('')
 
   const carregar = useCallback(async () => {
     const { data: resumoData } = await supabase
@@ -36,6 +43,14 @@ function TelaDetalheLote() {
       .eq('lote_id', lote_id)
       .order('numero_ferro')
     setAnimais(animaisData || [])
+
+    const { data: custosData } = await supabase
+      .from('custos')
+      .select('*')
+      .eq('lote_id', lote_id)
+      .order('data', { ascending: false })
+    setCustosLote(removerCorrigidos(custosData || []))
+
     setCarregando(false)
   }, [lote_id])
 
@@ -61,6 +76,26 @@ function TelaDetalheLote() {
     setSalvando(false)
     if (error) { setErroEdit('Erro ao salvar: ' + error.message); return }
     setEditando(false)
+    carregar()
+  }
+
+  async function salvarCorrecaoCusto(evento) {
+    evento.preventDefault()
+    setErroCusto('')
+    if (!novoValor || !justificativa.trim()) { setErroCusto('Informe o valor correto e o motivo.'); return }
+    const { error } = await supabase.from('custos').insert([{
+      lote_id: corrigindo.lote_id,
+      animal_id: corrigindo.animal_id,
+      categoria: corrigindo.categoria,
+      valor: Number(novoValor),
+      data: corrigindo.data,
+      descricao: corrigindo.descricao,
+      lancado_por: sessao?.user?.id,
+      custo_original_id: corrigindo.id,
+      justificativa: justificativa.trim(),
+    }])
+    if (error) { setErroCusto('Erro ao corrigir: ' + error.message); return }
+    setCorrigindo(null); setNovoValor(''); setJustificativa('')
     carregar()
   }
 
@@ -157,6 +192,54 @@ function TelaDetalheLote() {
               <Linha rotulo="Lucro dos vendidos" valor={moeda(resumo.lucro_realizado)} destaque
                 cor={resumo.lucro_realizado >= 0 ? 'text-primary' : 'text-danger'} />
               {resumo.dias_medios_vendidos > 0 && <Linha rotulo="Tempo médio até a venda" valor={`${Math.round(resumo.dias_medios_vendidos)} dias`} />}
+            </div>
+          </Cartao>
+        )}
+
+        {custosLote.length > 0 && (
+          <>
+            <p className="font-display text-lg font-semibold mb-2">Custos do lote</p>
+            <p className="text-text-soft text-sm mb-2">Rateados entre as {resumo.total_animais} cabeças. Corrigir aqui vale pro lote todo.</p>
+            <Cartao className="mb-4 divide-y divide-border">
+              {custosLote.map((custo) => (
+                <div key={custo.id} className="py-2.5 first:pt-0 last:pb-0 flex justify-between items-center gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {rotulosCategoria[custo.categoria] || custo.categoria}
+                      {custo.custo_original_id && <span className="text-warn text-xs font-semibold ml-1.5">corrigido</span>}
+                    </p>
+                    <p className="text-sm text-text-soft">{formatarData(custo.data)}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <p className="font-semibold numeros">{moeda(custo.valor)}</p>
+                    <button type="button" onClick={() => { setCorrigindo(custo); setNovoValor(String(custo.valor)); setJustificativa(''); setErroCusto('') }} aria-label="Corrigir este custo" className="p-1.5 text-text-soft rounded-full hover:bg-surface-2">
+                      <Pencil size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </Cartao>
+          </>
+        )}
+
+        {corrigindo && (
+          <Cartao as="form" onSubmit={salvarCorrecaoCusto} className="mb-4 space-y-3 anima-pop border-warn">
+            <p className="font-display text-lg font-semibold">
+              Corrigir {rotulosCategoria[corrigindo.categoria]} de {formatarData(corrigindo.data)}
+            </p>
+            <p className="text-text-soft text-sm -mt-2">
+              O lançamento original de {moeda(corrigindo.valor)} fica guardado no histórico; este novo valor entra no lugar dele, pro lote todo.
+            </p>
+            <Campo rotulo="Valor correto (R$)" id="novoValorCusto">
+              <Input id="novoValorCusto" type="number" min="0" step="any" inputMode="decimal" value={novoValor} onChange={(e) => setNovoValor(e.target.value)} />
+            </Campo>
+            <Campo rotulo="Motivo da correção" id="justCusto" dica="Ex.: digitei o valor errado">
+              <Input id="justCusto" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} />
+            </Campo>
+            {erroCusto && <Alerta tipo="erro">{erroCusto}</Alerta>}
+            <div className="flex gap-2">
+              <Botao type="submit" className="flex-1">Salvar correção</Botao>
+              <Botao type="button" variante="fantasma" onClick={() => setCorrigindo(null)}>Cancelar</Botao>
             </div>
           </Cartao>
         )}
