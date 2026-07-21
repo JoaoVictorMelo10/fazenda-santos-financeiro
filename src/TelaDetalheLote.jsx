@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from "react"
 import supabase from './supabaseClient.js'
 import { useParams, Link } from 'react-router-dom'
 import { Tela } from './componentes/Tela'
-import { Cartao, Selo, EstadoVazio, Esqueleto, MarcaFerro } from './componentes/UI'
+import { Cartao, Selo, EstadoVazio, Esqueleto, MarcaFerro, Campo, Input, Botao, Alerta } from './componentes/UI'
 import { moeda, formatarData } from './lib/formato'
+import { Pencil } from 'lucide-react'
 import { buscarPrecoArroba } from './lib/preco'
 
 const GANHO_ARROBA_MES = 1
@@ -15,6 +16,11 @@ function TelaDetalheLote() {
   const [animais, setAnimais] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [arroba, setArroba] = useState(null)
+  const [editando, setEditando] = useState(false)
+  const [nomeEdit, setNomeEdit] = useState('')
+  const [dataEdit, setDataEdit] = useState('')
+  const [erroEdit, setErroEdit] = useState('')
+  const [salvando, setSalvando] = useState(false)
 
   const carregar = useCallback(async () => {
     const { data: resumoData } = await supabase
@@ -36,6 +42,27 @@ function TelaDetalheLote() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- carga assíncrona, setState roda após await
   useEffect(() => { carregar() }, [carregar])
   useEffect(() => { buscarPrecoArroba().then(setArroba) }, [])
+
+  function abrirEdicao() {
+    setNomeEdit(resumo.lote_nome || '')
+    setDataEdit(resumo.data_compra ? String(resumo.data_compra).slice(0, 10) : '')
+    setErroEdit('')
+    setEditando(true)
+  }
+
+  async function salvarEdicao(evento) {
+    evento.preventDefault()
+    setErroEdit('')
+    if (!nomeEdit.trim()) { setErroEdit('O lote precisa de um nome.'); return }
+    setSalvando(true)
+    const { error } = await supabase.from('lotes')
+      .update({ nome: nomeEdit.trim(), data_compra: dataEdit || null })
+      .eq('id', lote_id)
+    setSalvando(false)
+    if (error) { setErroEdit('Erro ao salvar: ' + error.message); return }
+    setEditando(false)
+    carregar()
+  }
 
   if (carregando) {
     return <Tela titulo="Lote" voltar><div className="space-y-3"><Esqueleto altura="h-32" /><Esqueleto altura="h-40" /></div></Tela>
@@ -68,11 +95,32 @@ function TelaDetalheLote() {
   return (
     <Tela titulo={resumo.lote_nome} voltar>
       <div className="anima-lista">
+        {editando ? (
+          <Cartao as="form" onSubmit={salvarEdicao} className="mb-4 space-y-3 border-primary anima-pop">
+            <p className="font-display text-lg font-semibold">Editar lote</p>
+            <Campo rotulo="Nome do lote" id="nomeEdit">
+              <Input id="nomeEdit" value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
+            </Campo>
+            <Campo rotulo="Data da compra" id="dataEdit">
+              <Input id="dataEdit" type="date" value={dataEdit} onChange={(e) => setDataEdit(e.target.value)} />
+            </Campo>
+            {erroEdit && <Alerta tipo="erro">{erroEdit}</Alerta>}
+            <div className="flex gap-2">
+              <Botao type="submit" className="flex-1" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Botao>
+              <Botao type="button" variante="fantasma" onClick={() => setEditando(false)}>Cancelar</Botao>
+            </div>
+          </Cartao>
+        ) : (
         <Cartao className="mb-4">
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <Selo tipo="aberto">{resumo.em_aberto} no pasto</Selo>
-            {resumo.vendidos > 0 && <Selo tipo="vendido">{resumo.vendidos} vendidos</Selo>}
-            {resumo.perdas > 0 && <Selo tipo="perda">{resumo.perdas} perdas</Selo>}
+          <div className="flex items-start justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Selo tipo="aberto">{resumo.em_aberto} no pasto</Selo>
+              {resumo.vendidos > 0 && <Selo tipo="vendido">{resumo.vendidos} vendidos</Selo>}
+              {resumo.perdas > 0 && <Selo tipo="perda">{resumo.perdas} perdas</Selo>}
+            </div>
+            <button type="button" onClick={abrirEdicao} aria-label="Editar lote" className="p-1.5 -mt-1 -mr-1 text-text-soft rounded-full hover:bg-surface-2 shrink-0">
+              <Pencil size={18} />
+            </button>
           </div>
           <div className="space-y-1.5 text-sm">
             <Linha rotulo="Comprado em" valor={formatarData(resumo.data_compra)} />
@@ -80,6 +128,7 @@ function TelaDetalheLote() {
             <Linha rotulo="Investido no lote (compra + custos)" valor={moeda(resumo.investido_total)} destaque />
           </div>
         </Cartao>
+        )}
 
         {projecao && (
           <Cartao className="mb-4">

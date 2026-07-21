@@ -32,6 +32,9 @@ function ExibirAnimal() {
   const [justificativa, setJustificativa] = useState('')
 
   const [mostrarPerda, setMostrarPerda] = useState(false)
+  const [editandoAnimal, setEditandoAnimal] = useState(false)
+  const [formEdit, setFormEdit] = useState({})
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
   const [motivoPerda, setMotivoPerda] = useState('')
   const [erro, setErro] = useState('')
 
@@ -91,6 +94,7 @@ function ExibirAnimal() {
     if (animalData.peso_alvo_arr) setPesoAlvo(String(animalData.peso_alvo_arr))
   }, [numero_ferro])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- carga assíncrona, setState roda após await
   useEffect(() => { carregarTudo() }, [carregarTudo])
 
   // Preço da arroba: busca sozinho ao abrir a tela (com cache de 6h no aparelho)
@@ -147,6 +151,37 @@ function ExibirAnimal() {
     setCorrigindo(null)
     setNovoValor('')
     setJustificativa('')
+    carregarTudo()
+  }
+
+  function abrirEdicaoAnimal() {
+    setFormEdit({
+      peso_entrada_arr: String(animal.peso_entrada_arr ?? ''),
+      valor_arroba_compra: String(animal.valor_arroba_compra ?? ''),
+      data_entrada: animal.data_entrada ? String(animal.data_entrada).slice(0, 10) : '',
+      observacao: animal.observacao || '',
+      peso_alvo_arr: animal.peso_alvo_arr != null ? String(animal.peso_alvo_arr) : '',
+    })
+    setErro('')
+    setEditandoAnimal(true)
+  }
+
+  async function salvarEdicaoAnimal(evento) {
+    evento.preventDefault()
+    setErro('')
+    if (!formEdit.peso_entrada_arr || Number(formEdit.peso_entrada_arr) <= 0) { setErro('Informe um peso de entrada válido.'); return }
+    if (!formEdit.valor_arroba_compra || Number(formEdit.valor_arroba_compra) <= 0) { setErro('Informe um valor por @ válido.'); return }
+    setSalvandoEdit(true)
+    const { error } = await supabase.from('animais').update({
+      peso_entrada_arr: Number(formEdit.peso_entrada_arr),
+      valor_arroba_compra: Number(formEdit.valor_arroba_compra),
+      data_entrada: formEdit.data_entrada || animal.data_entrada,
+      observacao: formEdit.observacao.trim() || null,
+      peso_alvo_arr: formEdit.peso_alvo_arr ? Number(formEdit.peso_alvo_arr) : null,
+    }).eq('id', animal.id)
+    setSalvandoEdit(false)
+    if (error) { setErro('Erro ao salvar: ' + error.message); return }
+    setEditandoAnimal(false)
     carregarTudo()
   }
 
@@ -224,14 +259,50 @@ function ExibirAnimal() {
           </div>
         </div>
 
+        {editandoAnimal ? (
+          <Cartao as="form" onSubmit={salvarEdicaoAnimal} className="mb-4 space-y-3 border-primary anima-pop">
+            <p className="font-display text-lg font-semibold">Corrigir dados do animal</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Campo rotulo="Peso de entrada (@)" id="ed_peso">
+                <Input id="ed_peso" type="number" min="0" step="any" inputMode="decimal" value={formEdit.peso_entrada_arr} onChange={(e) => setFormEdit({ ...formEdit, peso_entrada_arr: e.target.value })} />
+              </Campo>
+              <Campo rotulo="Valor por @ (R$)" id="ed_valor">
+                <Input id="ed_valor" type="number" min="0" step="any" inputMode="decimal" value={formEdit.valor_arroba_compra} onChange={(e) => setFormEdit({ ...formEdit, valor_arroba_compra: e.target.value })} />
+              </Campo>
+            </div>
+            <Campo rotulo="Data de entrada" id="ed_data">
+              <Input id="ed_data" type="date" value={formEdit.data_entrada} onChange={(e) => setFormEdit({ ...formEdit, data_entrada: e.target.value })} />
+            </Campo>
+            <Campo rotulo="Peso alvo de venda (@)" id="ed_alvo" dica="Opcional">
+              <Input id="ed_alvo" type="number" min="0" step="any" inputMode="decimal" value={formEdit.peso_alvo_arr} onChange={(e) => setFormEdit({ ...formEdit, peso_alvo_arr: e.target.value })} />
+            </Campo>
+            <Campo rotulo="Observação" id="ed_obs" dica="Opcional">
+              <Input id="ed_obs" value={formEdit.observacao} onChange={(e) => setFormEdit({ ...formEdit, observacao: e.target.value })} />
+            </Campo>
+            <div className="flex gap-2">
+              <Botao type="submit" className="flex-1" disabled={salvandoEdit}>{salvandoEdit ? 'Salvando...' : 'Salvar'}</Botao>
+              <Botao type="button" variante="fantasma" onClick={() => setEditandoAnimal(false)}>Cancelar</Botao>
+            </div>
+          </Cartao>
+        ) : (
         <Cartao className="mb-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="font-display text-lg font-semibold">Dados do animal</p>
+            {animal.status !== 'vendido' && (
+              <button type="button" onClick={abrirEdicaoAnimal} aria-label="Corrigir dados do animal" className="p-1.5 -mr-1 text-text-soft rounded-full hover:bg-surface-2">
+                <Pencil size={18} />
+              </button>
+            )}
+          </div>
           <Linha rotulo="Peso de entrada" valor={`${animal.peso_entrada_arr}@`} />
           <Linha rotulo="Valor pago por @" valor={moeda(animal.valor_arroba_compra)} />
           <Linha rotulo="Valor de compra" valor={moeda(valorCompra)} destaque />
           {animal.lotes?.nome && <Linha rotulo="Lote" valor={animal.lotes.nome} />}
+          {animal.peso_alvo_arr && <Linha rotulo="Peso alvo de venda" valor={`${animal.peso_alvo_arr}@`} />}
           {animal.observacao && <Linha rotulo="Observação" valor={animal.observacao} />}
           {animal.status === 'perda' && <Linha rotulo="Motivo da perda" valor={animal.perda_motivo} />}
         </Cartao>
+        )}
 
         <p className="font-display text-lg font-semibold mb-2">Custos lançados</p>
         <Cartao className="mb-4 divide-y divide-border">
@@ -247,7 +318,7 @@ function ExibirAnimal() {
                   </p>
                   <p className="text-sm text-text-soft">
                     {formatarData(custo.data)}
-                    {rateado ? ` · parte do lote (÷${cabecasNoLote})` : ''}
+                    {rateado ? ` · parte do lote (÷${cabecasNoLote}) · corrige na tela do lote` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
