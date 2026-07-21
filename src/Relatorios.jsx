@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import supabase from "./supabaseClient"
+import { Link } from "react-router-dom"
 import { Tela } from "./componentes/Tela"
 import { Cartao, Select, Botao, EstadoVazio, Esqueleto } from "./componentes/UI"
 import { moeda, removerCorrigidos, rotulosCategoria, hojeISO } from "./lib/formato"
@@ -206,6 +207,10 @@ function Relatorios() {
               ))}
             </div>
           </Cartao>
+
+          <Link to="/custos-rebanho" className="block text-center text-sm text-primary-dark font-semibold mb-4">
+            Ver custos do rebanho
+          </Link>
 
           {lotes.length > 0 && (
             <>

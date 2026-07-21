@@ -1,5 +1,6 @@
 import supabase from './supabaseClient.js'
 import { useState, useEffect } from "react"
+import { Link } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { salvarCustoOffline } from './lib/db'
 import { Tela } from './componentes/Tela'
@@ -195,6 +196,10 @@ function LancamentoCusto() {
         <Botao type="submit" disabled={enviando} className="w-full">
           {enviando ? 'Enviando...' : 'Lançar custo'}
         </Botao>
+
+        <Link to="/custos-rebanho" className="block text-center text-sm text-primary-dark font-semibold py-1">
+          Ver e corrigir custos do rebanho
+        </Link>
       </form>
     </Tela>
   )
