@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from "react"
 import supabase from './supabaseClient.js'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { Tela } from './componentes/Tela'
 import { Cartao, Selo, Campo, Input, Botao, Alerta, MarcaFerro, Esqueleto } from './componentes/UI'
 import { moeda, formatarData, removerCorrigidos, rotulosCategoria, hojeISO } from './lib/formato'
 import { buscarPrecoArroba } from './lib/preco'
-import { Handshake, TriangleAlert, SlidersHorizontal, Pencil } from 'lucide-react'
+import { Handshake, TriangleAlert, SlidersHorizontal, Pencil, Trash2 } from 'lucide-react'
+import ConfirmarExclusao from './componentes/ConfirmarExclusao'
 
 function ExibirAnimal() {
   const { numero_ferro } = useParams()
+  const navigate = useNavigate()
   const { sessao } = useAuth()
 
   const [animal, setAnimal] = useState(null)
@@ -31,6 +33,7 @@ function ExibirAnimal() {
   const [justificativa, setJustificativa] = useState('')
 
   const [mostrarPerda, setMostrarPerda] = useState(false)
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [editandoAnimal, setEditandoAnimal] = useState(false)
   const [formEdit, setFormEdit] = useState({})
   const [salvandoEdit, setSalvandoEdit] = useState(false)
@@ -170,6 +173,12 @@ function ExibirAnimal() {
     carregarTudo()
   }
 
+  async function excluirAnimal() {
+    const { error } = await supabase.rpc('excluir_animal', { p_animal_id: animal.id })
+    if (error) throw new Error(error.message)
+    navigate('/lista-animais')
+  }
+
   if (carregando) {
     return (
       <Tela titulo={`Ferro ${numero_ferro}`} voltar>
@@ -193,6 +202,7 @@ function ExibirAnimal() {
     )
   }
 
+  const custosIndividuais = custosAnimal.filter((c) => c.tipo === 'animal').length
   const valorCompra = Number(animal.valor_total_compra)
   const custoTotal = valorCompra + custoAcumulado
 
@@ -476,10 +486,40 @@ function ExibirAnimal() {
                   </div>
                 </Cartao>
               )}
+
+              <Botao variante="fantasma" className="w-full text-danger" onClick={() => setConfirmandoExclusao(true)}>
+                <Trash2 size={18} />
+                Excluir animal
+              </Botao>
             </>
+          )}
+
+          {animal.status === 'vendido' && (
+            <p className="text-center text-sm text-text-soft">
+              Animal vendido não pode ser excluído. Para corrigir, ajuste a venda.
+            </p>
           )}
         </div>
       </div>
+
+      {confirmandoExclusao && (
+        <ConfirmarExclusao
+          titulo={`Excluir o animal ferro ${numero_ferro}?`}
+          textoConfirmacao={numero_ferro}
+          rotuloConfirmar="Excluir animal"
+          onCancelar={() => setConfirmandoExclusao(false)}
+          onConfirmar={excluirAnimal}
+          aviso={
+            <>
+              <p>Esta ação <strong>não pode ser desfeita</strong>. O animal será apagado do sistema.</p>
+              {custosIndividuais > 0 && (
+                <p>Ele tem <strong>{custosIndividuais} custo(s) individual(is)</strong> lançado(s) só nele — esses custos serão apagados junto.</p>
+              )}
+              <p>Custos de lote ou do rebanho <strong>não são apagados</strong>: eles apenas passam a ser divididos entre os animais que sobrarem.</p>
+            </>
+          }
+        />
+      )}
     </Tela>
   )
 }

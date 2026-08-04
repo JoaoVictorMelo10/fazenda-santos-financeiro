@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react"
 import supabase from './supabaseClient.js'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { Tela } from './componentes/Tela'
 import { Cartao, Selo, EstadoVazio, Esqueleto, MarcaFerro, Campo, Input, Botao, Alerta } from './componentes/UI'
 import { moeda, formatarData, removerCorrigidos, rotulosCategoria } from './lib/formato'
-import { Pencil } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
+import ConfirmarExclusao from './componentes/ConfirmarExclusao'
 import { buscarPrecoArroba } from './lib/preco'
 
 const GANHO_ARROBA_MES = 1
@@ -14,6 +15,7 @@ const TETO_MESES_SEM_ALVO = 12
 function TelaDetalheLote() {
   const { lote_id } = useParams()
   const { sessao } = useAuth()
+  const navigate = useNavigate()
   const [resumo, setResumo] = useState(null)
   const [animais, setAnimais] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -30,6 +32,7 @@ function TelaDetalheLote() {
   const [novoValor, setNovoValor] = useState('')
   const [justificativa, setJustificativa] = useState('')
   const [erroCusto, setErroCusto] = useState('')
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
 
   const carregar = useCallback(async () => {
     const { data: resumoData } = await supabase
@@ -119,6 +122,12 @@ function TelaDetalheLote() {
     if (error) { setErroCusto('Erro ao corrigir: ' + error.message); return }
     setCorrigindo(null); setNovoValor(''); setJustificativa('')
     carregar()
+  }
+
+  async function excluirLote() {
+    const { error } = await supabase.rpc('excluir_lote', { p_lote_id: lote_id })
+    if (error) throw new Error(error.message)
+    navigate('/lotes')
   }
 
   if (carregando) {
@@ -298,7 +307,35 @@ function TelaDetalheLote() {
             </Link>
           ))}
         </div>
+
+        {resumo.vendidos === 0 ? (
+          <Botao variante="fantasma" className="w-full text-danger mt-6" onClick={() => setConfirmandoExclusao(true)}>
+            <Trash2 size={18} />
+            Excluir lote inteiro
+          </Botao>
+        ) : (
+          <p className="text-center text-sm text-text-soft mt-6">
+            Lote com animais vendidos não pode ser excluído. Para corrigir, ajuste os registros.
+          </p>
+        )}
       </div>
+
+      {confirmandoExclusao && (
+        <ConfirmarExclusao
+          titulo={`Excluir o lote "${resumo.lote_nome}"?`}
+          textoConfirmacao={resumo.lote_nome}
+          rotuloConfirmar="Excluir lote"
+          onCancelar={() => setConfirmandoExclusao(false)}
+          onConfirmar={excluirLote}
+          aviso={
+            <>
+              <p>Esta ação <strong>não pode ser desfeita</strong>.</p>
+              <p>Serão apagados o lote e seus <strong>{resumo.em_aberto} animal(is) em aberto</strong>, junto com os custos individuais e os custos lançados no lote.</p>
+              <p>Custos do rebanho <strong>não são apagados</strong>: apenas se redividem entre os animais restantes.</p>
+            </>
+          }
+        />
+      )}
     </Tela>
   )
 }
