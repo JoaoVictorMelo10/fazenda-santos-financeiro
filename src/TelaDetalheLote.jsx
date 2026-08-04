@@ -21,6 +21,8 @@ function TelaDetalheLote() {
   const [editando, setEditando] = useState(false)
   const [nomeEdit, setNomeEdit] = useState('')
   const [dataEdit, setDataEdit] = useState('')
+  const [valorEdit, setValorEdit] = useState('')
+  const [propagar, setPropagar] = useState(true)
   const [erroEdit, setErroEdit] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [custosLote, setCustosLote] = useState([])
@@ -61,6 +63,8 @@ function TelaDetalheLote() {
   function abrirEdicao() {
     setNomeEdit(resumo.lote_nome || '')
     setDataEdit(resumo.data_compra ? String(resumo.data_compra).slice(0, 10) : '')
+    setValorEdit(resumo.valor_arroba_lote != null ? String(resumo.valor_arroba_lote) : '')
+    setPropagar(true)
     setErroEdit('')
     setEditando(true)
   }
@@ -69,12 +73,30 @@ function TelaDetalheLote() {
     evento.preventDefault()
     setErroEdit('')
     if (!nomeEdit.trim()) { setErroEdit('O lote precisa de um nome.'); return }
+    if (valorEdit !== '' && Number(valorEdit) <= 0) { setErroEdit('O valor por @ precisa ser maior que zero.'); return }
     setSalvando(true)
+
     const { error } = await supabase.from('lotes')
-      .update({ nome: nomeEdit.trim(), data_compra: dataEdit || null })
+      .update({
+        nome: nomeEdit.trim(),
+        data_compra: dataEdit || null,
+        valor_arroba_lote: valorEdit !== '' ? Number(valorEdit) : null,
+      })
       .eq('id', lote_id)
+
+    if (error) { setErroEdit('Erro ao salvar: ' + error.message); setSalvando(false); return }
+
+    // Propaga o novo valor da @ pra TODOS os animais do lote (em aberto e
+    // vendidos). O banco recalcula sozinho o valor total de compra e o lucro
+    // das vendas, porque são coluna gerada e view.
+    if (propagar && valorEdit !== '') {
+      const { error: erroProp } = await supabase.from('animais')
+        .update({ valor_arroba_compra: Number(valorEdit) })
+        .eq('lote_id', lote_id)
+      if (erroProp) { setErroEdit('Lote salvo, mas houve erro ao atualizar os animais: ' + erroProp.message); setSalvando(false); return }
+    }
+
     setSalvando(false)
-    if (error) { setErroEdit('Erro ao salvar: ' + error.message); return }
     setEditando(false)
     carregar()
   }
@@ -139,6 +161,17 @@ function TelaDetalheLote() {
             <Campo rotulo="Data da compra" id="dataEdit">
               <Input id="dataEdit" type="date" value={dataEdit} onChange={(e) => setDataEdit(e.target.value)} />
             </Campo>
+            <Campo rotulo="Valor da @ de compra (R$)" id="valorEdit" dica="O que foi pago por arroba na compra do lote">
+              <Input id="valorEdit" type="number" min="0" step="any" inputMode="decimal" value={valorEdit} onChange={(e) => setValorEdit(e.target.value)} />
+            </Campo>
+            {valorEdit !== '' && Number(valorEdit) !== Number(resumo.valor_arroba_lote) && (
+              <label className="flex items-start gap-2.5 bg-warn-soft rounded-xl p-3 cursor-pointer">
+                <input type="checkbox" checked={propagar} onChange={(e) => setPropagar(e.target.checked)} className="mt-0.5 w-5 h-5 accent-primary shrink-0" />
+                <span className="text-sm text-warn">
+                  Aplicar esse valor a <strong>todos os {resumo.total_animais} animais</strong> do lote — inclusive os já vendidos. O lucro das vendas será recalculado com o novo valor.
+                </span>
+              </label>
+            )}
             {erroEdit && <Alerta tipo="erro">{erroEdit}</Alerta>}
             <div className="flex gap-2">
               <Botao type="submit" className="flex-1" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar'}</Botao>

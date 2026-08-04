@@ -169,16 +169,16 @@ function CadastroAnimais() {
 
         <Cartao className="space-y-4">
           <Campo rotulo="Número do ferro" id="ferro" dica="O número marcado no couro">
-            <Input id="ferro" type="number" min="1" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} required />
+            <Input id="ferro" type="number" min="1" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} />
           </Campo>
 
           <Campo rotulo="Data de entrada" id="data" dica="Já vem com hoje — mude só se for outro dia">
-            <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} required />
+            <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
           </Campo>
 
           <div className="grid grid-cols-2 gap-3">
             <Campo rotulo="Peso (arrobas)" id="peso">
-              <Input id="peso" type="number" min="0" step="any" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} required />
+              <Input id="peso" type="number" min="0" step="any" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} />
             </Campo>
             <Campo rotulo="Valor por @ (R$)" id="valor" dica={valor === '' && valorDoLote ? `Vazio = usa o do lote (${moeda(valorDoLote)})` : undefined}>
               <Input id="valor" type="number" step="any" inputMode="decimal" value={valor} placeholder={valorDoLote ? String(valorDoLote) : ''} onChange={(e) => setValor(e.target.value)} />
@@ -205,8 +205,13 @@ function CadastroAnimais() {
         {erro && <Alerta tipo="erro">{erro}</Alerta>}
 
         <Botao type="submit" disabled={enviando} className="w-full">
-          {enviando ? 'Salvando...' : (cadastrados.length > 0 ? 'Cadastrar mais um' : 'Cadastrar animal')}
+          {enviando ? 'Salvando...' : 'Salvar este animal'}
         </Botao>
+        {cadastrados.length > 0 && (
+          <p className="text-center text-sm text-text-soft -mt-1">
+            Preencha os campos acima e salve — pode cadastrar quantos quiser em seguida.
+          </p>
+        )}
       </form>
 
       {cadastrados.length > 0 && (
