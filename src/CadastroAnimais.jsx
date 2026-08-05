@@ -64,8 +64,8 @@ function CadastroAnimais() {
       setErro('Preencha número do ferro, data e peso.')
       return
     }
-    if (Number(ferro) <= 0) {
-      setErro('O número do ferro precisa ser maior que zero.')
+    if (Number(ferro) < 0) {
+      setErro('O número do ferro não pode ser negativo.')
       return
     }
     if (Number(peso) <= 0) {
@@ -169,7 +169,7 @@ function CadastroAnimais() {
 
         <Cartao className="space-y-4">
           <Campo rotulo="Número do ferro" id="ferro" dica="O número marcado no couro">
-            <Input id="ferro" type="number" min="1" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} />
+            <Input id="ferro" type="number" min="0" inputMode="numeric" value={ferro} onChange={(e) => setFerro(e.target.value)} />
           </Campo>
 
           <Campo rotulo="Data de entrada" id="data" dica="Já vem com hoje — mude só se for outro dia">

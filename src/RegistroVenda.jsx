@@ -146,7 +146,7 @@ function RegistroVenda() {
                   <div className="grid grid-cols-2 gap-2 flex-1">
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">Ferro</label>
-                      <Input type="number" min="1" inputMode="numeric" value={linha.ferro} onChange={(e) => atualizarLinha(indice, 'ferro', e.target.value)} />
+                      <Input type="number" min="0" inputMode="numeric" value={linha.ferro} onChange={(e) => atualizarLinha(indice, 'ferro', e.target.value)} />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-text-soft mb-1">Peso saída (@)</label>
