@@ -14,6 +14,7 @@ function CadastroAnimais() {
   const [ferro, setFerro] = useState('')
   const [data, setData] = useState(hojeISO())
   const [peso, setPeso] = useState('')
+  const [unidadePeso, setUnidadePeso] = useState('arroba') // 'arroba' ou 'kg'
   const [valor, setValor] = useState('')
   const [observacao, setObservacao] = useState('')
   const [pesoAlvo, setPesoAlvo] = useState('')
@@ -46,7 +47,13 @@ function CadastroAnimais() {
     : (Number(lotes.find((l) => l.lote_id === loteSelecionado)?.valor_arroba_lote) || null)
 
   const valorEfetivo = valor !== '' ? Number(valor) : valorDoLote
-  const valorTotal = (Number(peso) || 0) * (valorEfetivo || 0)
+  // O peso é sempre GRAVADO em arrobas. Se o usuário digitar em kg (peso vivo),
+  // converte: kg vivo ÷ 2 (rendimento de carcaça ~50%) ÷ 15 (1@ = 15kg carcaça).
+  const pesoArrobas = unidadePeso === 'kg'
+    ? (Number(peso) || 0) / 2 / 15
+    : (Number(peso) || 0)
+
+  const valorTotal = pesoArrobas * (valorEfetivo || 0)
 
   function limparAnimal() {
     setFerro('')
@@ -68,7 +75,7 @@ function CadastroAnimais() {
       setErro('O número do ferro não pode ser negativo.')
       return
     }
-    if (Number(peso) <= 0) {
+    if (pesoArrobas <= 0) {
       setErro('O peso precisa ser maior que zero.')
       return
     }
@@ -112,7 +119,7 @@ function CadastroAnimais() {
     const { error } = await supabase.from('animais').insert([{
       numero_ferro: Number(ferro),
       data_entrada: data,
-      peso_entrada_arr: Number(peso),
+      peso_entrada_arr: pesoArrobas,
       valor_arroba_compra: valorEfetivo,
       lote_id: loteId,
       observacao: observacao || null,
@@ -177,9 +184,29 @@ function CadastroAnimais() {
           </Campo>
 
           <div className="grid grid-cols-2 gap-3">
-            <Campo rotulo="Peso (arrobas)" id="peso">
-              <Input id="peso" type="number" min="0" step="any" inputMode="decimal" value={peso} onChange={(e) => setPeso(e.target.value)} />
-            </Campo>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-base font-semibold text-text">Peso</span>
+                <div className="flex rounded-lg border border-border overflow-hidden text-sm">
+                  <button type="button" onClick={() => setUnidadePeso('arroba')}
+                    className={`px-3 py-1 font-semibold transition-colors ${unidadePeso === 'arroba' ? 'bg-primary text-white' : 'bg-white text-text-soft'}`}>
+                    @
+                  </button>
+                  <button type="button" onClick={() => setUnidadePeso('kg')}
+                    className={`px-3 py-1 font-semibold transition-colors ${unidadePeso === 'kg' ? 'bg-primary text-white' : 'bg-white text-text-soft'}`}>
+                    kg
+                  </button>
+                </div>
+              </div>
+              <Input id="peso" type="number" min="0" step="any" inputMode="decimal"
+                value={peso} onChange={(e) => setPeso(e.target.value)}
+                placeholder={unidadePeso === 'kg' ? 'Peso vivo em kg' : 'Peso em arrobas'} />
+              {unidadePeso === 'kg' && Number(peso) > 0 && (
+                <span className="block text-sm text-text-soft mt-1">
+                  {Number(peso)} kg vivo = <strong className="text-text">{pesoArrobas.toFixed(2)}@</strong>
+                </span>
+              )}
+            </div>
             <Campo rotulo="Valor por @ (R$)" id="valor" dica={valor === '' && valorDoLote ? `Vazio = usa o do lote (${moeda(valorDoLote)})` : undefined}>
               <Input id="valor" type="number" step="any" inputMode="decimal" value={valor} placeholder={valorDoLote ? String(valorDoLote) : ''} onChange={(e) => setValor(e.target.value)} />
             </Campo>
